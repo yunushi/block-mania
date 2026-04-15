@@ -20,13 +20,15 @@ const BlockInventory: React.FC<BlockInventoryProps> = ({ blocks, onPlace, onDrag
           className="flex justify-center items-center flex-1 max-w-[150px] aspect-square h-auto border border-white/5 rounded-xl sm:rounded-2xl bg-white/5"
         >
           {blocks[index] && (
-            <div className="flex justify-center items-center w-full h-full transform scale-90 md:scale-100 hover:scale-110 transition-transform">
-              <DraggableBlock 
-                block={blocks[index]} 
-                onPlace={onPlace} 
-                onDragMove={onDragMove} 
-                onDragEnd={onDragEnd} 
-              />
+            <div className="relative flex justify-center items-center w-full h-full transform scale-90 md:scale-100 hover:scale-110 transition-transform">
+              <div className="absolute flex justify-center items-center">
+                <DraggableBlock 
+                  block={blocks[index]} 
+                  onPlace={onPlace} 
+                  onDragMove={onDragMove} 
+                  onDragEnd={onDragEnd} 
+                />
+              </div>
             </div>
           )}
         </div>
