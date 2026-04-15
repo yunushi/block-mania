@@ -79,11 +79,9 @@ body {
   border-radius: 6px;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.2),
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: none;
+  border: 4px solid rgba(255, 255, 255, 0.15); /* Soft border instead of GPU heavy shadow */
+  backdrop-filter: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
@@ -91,16 +89,7 @@ body {
 }
 
 .cell-cube::after {
-  content: '';
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 30%;
-  height: 20%;
-  background: rgba(255, 255, 255, 0.2);
-  filter: blur(2px);
-  border-radius: 50%;
-  pointer-events: none;
+  display: none; /* Disable specular highlight blur filter that kills Android GPU */
 }
 
 /* CLASSIC SKIN - Solid 3D Blocks */
@@ -135,12 +124,12 @@ body {
   animation: gold-shimmer 3s infinite;
 }
 
-/* Fallback/Generic colors to ensure no transparency */
-.cell-color-1 { background: #ef4444; }
-.cell-color-2 { background: #3b82f6; }
-.cell-color-3 { background: #22c55e; }
-.cell-color-4 { background: #eab308; }
-.cell-color-5 { background: #a855f7; }
+/* Relaxing, pastel, "loş" colors for block blast grid */
+.cell-color-1 { background: #e07a5f; } /* Soft Salmon/Red */
+.cell-color-2 { background: #5c9bb7; } /* Pastel Sky Blue */
+.cell-color-3 { background: #81b29a; } /* Calm Sage Green */
+.cell-color-4 { background: #f2cc8f; } /* Muted Sand Yellow */
+.cell-color-5 { background: #b5838d; } /* Dusty Rose Purple */
 
 /* Keep existing animations but refine them */
 @keyframes gold-shimmer {

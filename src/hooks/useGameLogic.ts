@@ -189,7 +189,7 @@ export const useGameLogic = () => {
     else activeShapePool = ALL_SHAPES;
 
     let spawned3x3 = false;
-    const spawnedShapes = new Set<string>();
+    const spawnedShapes = new Map<string, number>();
     for (let i = 0; i < 3; i++) {
         let shape: number[][] | null = null;
         
@@ -199,7 +199,9 @@ export const useGameLogic = () => {
           const filteredLineCompleters = lineCompletingIndices.filter(idx => {
             if (DIAGONAL_INDICES.includes(idx)) return false;
             if (idx === 35 && spawned3x3) return false;
-            if (spawnedShapes.has(JSON.stringify(ALL_SHAPES[idx])) && Math.random() < 0.7) return false;
+            const strShape = JSON.stringify(ALL_SHAPES[idx]);
+            if ((spawnedShapes.get(strShape) || 0) >= 2) return false;
+            if (spawnedShapes.has(strShape) && Math.random() < 0.7) return false;
             return true;
           });
           
@@ -230,8 +232,12 @@ export const useGameLogic = () => {
             // Mega L shape rarity
             if (MEGA_L_INDICES.includes(index)) return Math.random() < 0.05; 
             
+            // Strictly prevent 3 of the same block
+            const strShape = JSON.stringify(s);
+            if ((spawnedShapes.get(strShape) || 0) >= 2) return false;
+            
             // Prevent duplicate block spam in same wave
-            if (spawnedShapes.has(JSON.stringify(s)) && Math.random() < 0.7) return false;
+            if (spawnedShapes.has(strShape) && Math.random() < 0.7) return false;
             
             return true;
           });
@@ -239,7 +245,10 @@ export const useGameLogic = () => {
           shape = pool[Math.floor(Math.random() * pool.length)];
         }
         
-        if (shape) spawnedShapes.add(JSON.stringify(shape));
+        if (shape) {
+           const strShape = JSON.stringify(shape);
+           spawnedShapes.set(strShape, (spawnedShapes.get(strShape) || 0) + 1);
+        }
         if (ALL_SHAPES.indexOf(shape) === 35) spawned3x3 = true;
         
         const color = availableColors[Math.floor(Math.random() * availableColors.length)];

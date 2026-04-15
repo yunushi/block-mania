@@ -42,10 +42,9 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
   }, []);
 
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const startCenterRef = useRef({ x: 0, y: 0 });
   const visualLeftRef = useRef(0);
   const visualTopRef = useRef(0);
-  const visualWidthRef = useRef(0);
-  const visualHeightRef = useRef(0);
 
   // Auto-scale to fit the inventory slot (with some padding)
   const blockWidthFull = block.shape[0].length * cellSize;
@@ -79,8 +78,12 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     const rect = blockRef.current.getBoundingClientRect();
     visualLeftRef.current = rect.left;
     visualTopRef.current = rect.top;
-    visualWidthRef.current = rect.width;
-    visualHeightRef.current = rect.height;
+    
+    // Find the absolute center of the starting block
+    startCenterRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    };
 
     setStartPos({ x: e.clientX, y: e.clientY });
     latestPointerRef.current = { x: e.clientX, y: e.clientY };
@@ -105,18 +108,9 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging || !blockRef.current) return;
     
-    latestPointerRef.current = { x: e.clientX, y: e.clientY };
+    // We could restrict movement strictly here, but to avoid math anomalies we just let the bounding box handle offset
     let newX = e.clientX - startPos.x;
     let newY = e.clientY - startPos.y;
-
-    // Constraint logic: Keep block within viewport using CACHED bounds (NO REFLOW)
-    const futureLeft = visualLeftRef.current + newX;
-    const futureTop = visualTopRef.current + newY;
-
-    if (futureLeft < 0) newX = -visualLeftRef.current;
-    if (futureTop < 0) newY = -visualTopRef.current;
-    if (futureLeft + visualWidthRef.current > window.innerWidth) newX = window.innerWidth - visualLeftRef.current - visualWidthRef.current;
-    if (futureTop + visualHeightRef.current > window.innerHeight) newY = window.innerHeight - visualTopRef.current - visualHeightRef.current;
 
     setDragOffset({ x: newX, y: newY });
   };
@@ -138,10 +132,19 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     
     let currentScale = dragScale;
     const scaledWidth = blockWidthFull * currentScale;
-    const widthDiff = scaledWidth - blockWidthFull;
+    const scaledHeight = blockHeightFull * currentScale;
     
-    const checkX = visualLeftRef.current + newX - (widthDiff/2) + (cellSize / 2 * currentScale);
-    const checkY = visualTopRef.current + newY - ((blockHeightFull * currentScale - blockHeightFull)/2) + (cellSize / 2 * currentScale);
+    // Current center of the block is simply the starting center + translation offset!
+    const currentCenterX = startCenterRef.current.x + newX;
+    const currentCenterY = startCenterRef.current.y + newY;
+    
+    // The visual top-left of the fully dragged block:
+    const topLeftX = currentCenterX - scaledWidth / 2;
+    const topLeftY = currentCenterY - scaledHeight / 2;
+
+    // The center point of the very first cell [0][0] in the block
+    const checkX = topLeftX + (cellSize * currentScale) / 2;
+    const checkY = topLeftY + (cellSize * currentScale) / 2;
 
     const cell = findNearestCell(checkX, checkY);
 
