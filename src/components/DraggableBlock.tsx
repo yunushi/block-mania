@@ -149,14 +149,29 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     const topLeftX = currentCenterX - scaledWidth / 2;
     const topLeftY = currentCenterY - scaledHeight / 2;
 
-    // The center point of the very first cell [0][0] in the block
-    const checkX = topLeftX + (cellSize * currentScale) / 2;
-    const checkY = topLeftY + (cellSize * currentScale) / 2;
+    // Find the first solid block rather than empty [0][0] space
+    let firstSolidR = 0, firstSolidC = 0;
+    for (let r = 0; r < rows; r++) {
+      let found = false;
+      for (let c = 0; c < columns; c++) {
+        if (block.shape[r][c] === 1) {
+          firstSolidR = r;
+          firstSolidC = c;
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    // The visually perceived center point of the primary solid cell
+    const checkX = topLeftX + firstSolidC * (cellSize + GRID_GAP) + cellSize / 2;
+    const checkY = topLeftY + firstSolidR * (cellSize + GRID_GAP) + cellSize / 2;
 
     const cell = findNearestCell(checkX, checkY);
 
     if (cell) {
-        onPlace(block.id, cell.row, cell.col);
+        onPlace(block.id, cell.row - firstSolidR, cell.col - firstSolidC);
     }
     
     // Re-enable transition as it flies back to inventory if placement fails
