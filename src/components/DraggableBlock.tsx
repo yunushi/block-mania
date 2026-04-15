@@ -93,7 +93,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
   const findNearestCell = (clientX: number, clientY: number) => {
     let nearest = null;
     let minDist = Infinity;
-    const maxDistSq = Math.pow(cellSize * 0.8, 2); // Sweet spot for snapping
+    const maxDistSq = Math.pow(cellSize * 1.5, 2); // Sweet spot for snapping - increased for easiest placement!
     
     for (const cell of gridCellsRef.current) {
         const distSq = Math.pow(cell.x - clientX, 2) + Math.pow(cell.y - clientY, 2);
@@ -109,8 +109,11 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     if (!isDragging || !blockRef.current) return;
     
     // We could restrict movement strictly here, but to avoid math anomalies we just let the bounding box handle offset
+    // Mobile jump offset so block isn't occluded by finger
+    const mobileOffset = cellSize < 44 ? 70 : 40;
+    
     let newX = e.clientX - startPos.x;
-    let newY = e.clientY - startPos.y;
+    let newY = e.clientY - startPos.y - mobileOffset;
 
     setDragOffset({ x: newX, y: newY });
   };
@@ -127,8 +130,10 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     // Use the latest reliable pointer coords, iOS sometimes reports 0/0 on Up events
     const finalX = latestPointerRef.current.x;
     const finalY = latestPointerRef.current.y;
+    
+    const mobileOffset = cellSize < 44 ? 70 : 40;
     let newX = finalX - startPos.x;
-    let newY = finalY - startPos.y;
+    let newY = finalY - startPos.y - mobileOffset;
     
     let currentScale = dragScale;
     const scaledWidth = blockWidthFull * currentScale;
@@ -161,7 +166,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
         width: blockWidthFull,
         height: blockHeightFull,
         touchAction: 'none',
-        transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) scale(${isDragging ? dragScale : invScale})`,
+        transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(${isDragging ? dragScale : invScale})`,
         zIndex: isDragging ? 9999 : 10,
         pointerEvents: 'auto',
         transformOrigin: 'center center',
@@ -175,8 +180,11 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
         setDragOffset({ x: 0, y: 0 });
       }}
     >
+      {/* Invisible expanded hit area so users can grab from the surrounding slot */}
+      <div className={`absolute -inset-10 z-0 ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`} />
+
       <div 
-        className={`grid ${isDragging ? 'opacity-90' : 'opacity-100'}`} 
+        className={`grid ${isDragging ? 'opacity-90' : 'opacity-100'} relative z-10`} 
         style={{
           gridTemplateColumns: `repeat(${block.shape[0].length}, 1fr)`,
           gap: '2px',

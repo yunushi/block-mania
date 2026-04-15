@@ -73,8 +73,8 @@ export default function Home() {
         onReset={resetGame}
       />
 
-      {/* Game Board Container */}
-      <div className={`relative p-3 rounded-[2.5rem] bg-slate-900/60 border border-white/10 z-10 transition-all`}>
+      {/* Game Board Container - Sharpened UI separation */}
+      <div className={`relative p-3 sm:p-4 rounded-[2.5rem] bg-slate-950/80 border-[3px] border-white/5 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)] z-10 transition-all`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
