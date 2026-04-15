@@ -5,7 +5,7 @@ import { Block } from '@/types/game';
 import DraggableBlock from './DraggableBlock';
 
 interface BlockInventoryProps {
-  blocks: Block[];
+  blocks: (Block | null)[];
   onPlace: (blockId: string, row: number, col: number) => boolean;
   onDragMove?: (blockId: string, row: number, col: number) => void;
   onDragEnd?: () => void;
