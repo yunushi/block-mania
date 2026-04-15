@@ -10,7 +10,7 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 export default function Home() {
   const {
     grid, score, inventory, gameOver,
-    previewLines, comboCount, showCombo, showPerfect, comboShoutout,
+    comboCount, showCombo, showPerfect, comboShoutout,
     isMuted, toggleMute,
     gameStatus, setGameStatus,
     placeBlock, updatePreview, clearPreview, resetGame, startGame, goToMenu
