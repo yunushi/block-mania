@@ -1,0 +1,429 @@
+import { useState, useCallback, useMemo } from 'react';
+import { Grid, Block, Position, Cell } from '@/types/game';
+
+const GRID_SIZE = 8;
+
+const SKIN_ASSETS = {
+  classic: ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'],
+  neon: ['color-1', 'color-2', 'color-3', 'color-4', 'color-5'],
+  gold: ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
+};
+
+const SHAPES_TIERS = {
+  easy: [
+    [[1]], // 1x1
+    [[1, 1]], // 1x2
+    [[1], [1]], // 2x1
+    [[1, 1], [1, 1]], // 2x2
+  ],
+  medium: [
+    [[1, 1, 1]], // 1x3
+    [[1], [1], [1]], // 3x1
+    [[1, 1, 1], [0, 1, 0]], // T-shape
+    [[0, 1, 0], [1, 1, 1]], // T-shape up
+    [[0, 1], [1, 1], [0, 1]], // T-shape left
+    [[1, 0], [1, 1], [1, 0]], // T-shape right
+    [[1, 1, 0], [0, 1, 1]], // Z-shape
+    [[0, 1, 1], [1, 1, 0]], // S-shape
+    [[1, 1], [1, 0]], // Small L 1
+    [[1, 1], [0, 1]], // Small L 2
+    [[1, 0], [1, 1]], // Small L 3
+    [[0, 1], [1, 1]], // Small L 4
+  ],
+  hard: [
+    [[1, 0], [1, 0], [1, 1]], // L-shape
+    [[0, 1], [0, 1], [1, 1]], // J-shape
+    [[1, 1], [1, 0], [1, 0]], // L-shape Inverse
+    [[1, 1], [0, 1], [0, 1]], // J-shape Inverse
+    [[1, 1, 1, 1]], // 1x4
+    [[1, 1]], // Horizontal 2 (Utility)
+    [[1], [1], [1], [1]], // 4x1
+    [[1, 1, 1], [1, 0, 0]], // Horizontal L 1
+    [[1, 1, 1], [0, 0, 1]], // Horizontal L 2
+    [[1, 0, 0], [1, 1, 1]], // Horizontal L 1 Inverse
+    [[0, 0, 1], [1, 1, 1]], // Horizontal L 2 Inverse
+    [[1, 0], [0, 1]], // Diagonal 2
+    [[0, 1], [1, 0]], // Diagonal 2 Inverse
+    [[1, 0, 0], [0, 1, 0], [0, 0, 1]], // Diagonal 3
+    [[0, 0, 1], [0, 1, 0], [1, 0, 0]], // Diagonal 3 Inverse
+    [[1, 0, 0], [1, 0, 0], [1, 1, 1]], // Mega L 1
+    [[0, 0, 1], [0, 0, 1], [1, 1, 1]], // Mega L 2
+    [[1, 1, 1], [1, 0, 0], [1, 0, 0]], // Mega L 3
+    [[1, 1, 1], [0, 0, 1], [0, 0, 1]], // Mega L 4
+    [[1, 1, 1], [1, 1, 1], [1, 1, 1]], // 3x3 Cube
+  ]
+};
+
+const ALL_SHAPES = [...SHAPES_TIERS.easy, ...SHAPES_TIERS.medium, ...SHAPES_TIERS.hard];
+const DIAGONAL_INDICES = [27, 28, 29, 30]; 
+const MEGA_L_INDICES = [31, 32, 33, 34];
+
+export const useGameLogic = () => {
+  const [grid, setGrid] = useState<Grid>(
+    Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))
+  );
+  const [score, setScore] = useState(0);
+  const [inventory, setInventory] = useState<(Block | null)[]>([null, null, null]);
+  const [gameStatus, setGameStatus] = useState<'menu' | 'playing' | 'gameOver'>('menu');
+  const [gameOver, setGameOver] = useState(false);
+  const [comboCount, setComboCount] = useState(0);
+  const [comboGrace, setComboGrace] = useState(3);
+  const [showCombo, setShowCombo] = useState(false);
+  const [showPerfect, setShowPerfect] = useState(false);
+  const [comboShoutout, setComboShoutout] = useState<{ text: string, type: string } | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentSkin, setCurrentSkin] = useState<'classic' | 'neon' | 'gold'>('classic');
+  const [previewLines, setPreviewLines] = useState<{ rows: number[], cols: number[], colors: Record<string, string> }>({
+    rows: [],
+    cols: [],
+    colors: {}
+  });
+
+  const cycleSkin = useCallback(() => {
+    const skins: ('classic' | 'neon' | 'gold')[] = ['classic', 'neon', 'gold'];
+    const nextIndex = (skins.indexOf(currentSkin) + 1) % skins.length;
+    setCurrentSkin(skins[nextIndex]);
+  }, [currentSkin]);
+
+  const toggleMute = useCallback(() => setIsMuted(prev => !prev), []);
+  const changeSkin = useCallback((skin: 'classic' | 'neon' | 'gold') => setCurrentSkin(skin), []);
+
+  const playSound = useCallback((type: 'place' | 'combo' | 'perfect' | 'nice' | 'great' | 'incredible' | 'godlike') => {
+    if (isMuted) return;
+    const urls = {
+      place: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Crisp "şık" sound
+      combo: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', // Bling
+      perfect: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', // Fanfare
+      nice: 'https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3', // Chime 1
+      great: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', // Chime 2
+      incredible: 'https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3', // Major success
+      godlike: 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3', // Epic
+    };
+    const audio = new Audio(urls[type]);
+    audio.volume = type === 'place' ? 1.0 : 0.8;
+    audio.play().catch(() => {});
+  }, [isMuted]);
+
+  const canPlaceBlock = useCallback((targetGrid: Grid, block: Block, pos: Position) => {
+    for (let r = 0; r < block.shape.length; r++) {
+      for (let c = 0; c < block.shape[r].length; c++) {
+        if (block.shape[r][c] === 1) {
+          const gridR = pos.row + r;
+          const gridC = pos.col + c;
+          if (
+            gridR < 0 || gridR >= GRID_SIZE ||
+            gridC < 0 || gridC >= GRID_SIZE ||
+            targetGrid[gridR][gridC] !== null
+          ) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }, []);
+
+  const getHelpfulShapes = useCallback((currentGrid: Grid) => {
+    const helpfulIndices: number[] = [];
+    const lineCompletingIndices: number[] = [];
+    
+    ALL_SHAPES.forEach((shape, index) => {
+      let isHelpful = false;
+      let completesLine = false;
+
+      for (let r = 0; r <= GRID_SIZE - shape.length; r++) {
+        for (let c = 0; c <= GRID_SIZE - shape[0].length; c++) {
+          const mockBlock = { shape } as Block;
+          if (canPlaceBlock(currentGrid, mockBlock, { row: r, col: c })) {
+            isHelpful = true;
+            
+            const tempGrid = currentGrid.map(row => [...row]);
+            for (let sr = 0; sr < shape.length; sr++) {
+              for (let sc = 0; sc < shape[sr].length; sc++) {
+                if (shape[sr][sc] === 1) tempGrid[r+sr][c+sc] = { image: 'test', id: 'test' };
+              }
+            }
+            const rowFull = tempGrid.some(row => row.every(cell => cell !== null));
+            let colFull = false;
+            for (let tc = 0; tc < GRID_SIZE; tc++) {
+              let f = true;
+              for (let tr = 0; tr < GRID_SIZE; tr++) if (tempGrid[tr][tc] === null) { f = false; break; }
+              if (f) { colFull = true; break; }
+            }
+            if (rowFull || colFull) completesLine = true;
+          }
+          if (completesLine) break;
+        }
+        if (completesLine) break;
+      }
+      
+      if (isHelpful) helpfulIndices.push(index);
+      if (completesLine) lineCompletingIndices.push(index);
+    });
+    
+    return { helpfulIndices, lineCompletingIndices };
+  }, [canPlaceBlock]);
+
+  const generateInventory = useCallback(() => {
+    const newInventory: (Block | null)[] = [null, null, null];
+    const { helpfulIndices, lineCompletingIndices } = getHelpfulShapes(grid);
+    const availableColors = SKIN_ASSETS[currentSkin];
+
+    let activeShapePool: number[][][];
+    if (score < 8000) activeShapePool = SHAPES_TIERS.easy;
+    else if (score < 16000) activeShapePool = [...SHAPES_TIERS.easy, ...SHAPES_TIERS.medium];
+    else activeShapePool = ALL_SHAPES;
+
+    let spawned3x3 = false;
+    const spawnedShapes = new Set<string>();
+    for (let i = 0; i < 3; i++) {
+        let shape: number[][] | null = null;
+        
+        // Helpful / Line-completing logic
+        if (lineCompletingIndices.length > 0 && Math.random() < 1.0) { // Max helpful logic chance
+          // Filter out diagonal shapes AND 3x3 if already spawned
+          const filteredLineCompleters = lineCompletingIndices.filter(idx => {
+            if (DIAGONAL_INDICES.includes(idx)) return false;
+            if (idx === 35 && spawned3x3) return false;
+            if (spawnedShapes.has(JSON.stringify(ALL_SHAPES[idx])) && Math.random() < 0.7) return false;
+            return true;
+          });
+          
+          const targetIndices = (filteredLineCompleters.length > 0) 
+            ? filteredLineCompleters 
+            : lineCompletingIndices.filter(idx => !(idx === 35 && spawned3x3)); // At least prevent 3x3 double
+            
+          if (targetIndices.length === 0) {
+              shape = ALL_SHAPES[lineCompletingIndices[Math.floor(Math.random() * lineCompletingIndices.length)]];
+          } else {
+              shape = ALL_SHAPES[targetIndices[Math.floor(Math.random() * targetIndices.length)]];
+          }
+        } else {
+          const filteredPool = activeShapePool.filter((s) => {
+            const index = ALL_SHAPES.indexOf(s);
+            // Reduce probability for 1x1 block
+            if (index === 0) return Math.random() < 0.15;
+            
+            // Dynamic rarity for 3x3 (Index 35) - gets rarer as score increases
+            if (index === 35) {
+              if (spawned3x3) return false; // LIMIT: Only one 3x3 per wave
+              const rarityWeight = Math.max(0.05, 1.0 - (score / 30000));
+              return Math.random() < rarityWeight;
+            }
+            // Even rarer base spawn for diagonals
+            if (DIAGONAL_INDICES.includes(index)) return Math.random() < 0.05; 
+            
+            // Mega L shape rarity
+            if (MEGA_L_INDICES.includes(index)) return Math.random() < 0.05; 
+            
+            // Prevent duplicate block spam in same wave
+            if (spawnedShapes.has(JSON.stringify(s)) && Math.random() < 0.7) return false;
+            
+            return true;
+          });
+          const pool = filteredPool.length > 0 ? filteredPool : activeShapePool;
+          shape = pool[Math.floor(Math.random() * pool.length)];
+        }
+        
+        if (shape) spawnedShapes.add(JSON.stringify(shape));
+        if (ALL_SHAPES.indexOf(shape) === 35) spawned3x3 = true;
+        
+        const color = availableColors[Math.floor(Math.random() * availableColors.length)];
+        newInventory[i] = {
+          id: Math.random().toString(36).substr(2, 9),
+          shape,
+          image: color,
+          size: Math.max(shape.length, shape[0].length),
+        };
+    }
+    setInventory(newInventory);
+  }, [grid, score, getHelpfulShapes, currentSkin]);
+
+  const resetGame = useCallback(() => {
+    setGrid(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
+    setScore(0);
+    setGameOver(false);
+    setGameStatus('playing');
+    setComboCount(0);
+    setComboGrace(3);
+    setShowCombo(false);
+    setShowPerfect(false);
+    
+    // Initial Spawn
+    const availableColors = SKIN_ASSETS[currentSkin];
+    const initialPool = SHAPES_TIERS.easy;
+    const initialInv: (Block | null)[] = [null, null, null];
+    for (let i = 0; i < 3; i++) {
+      const shape = initialPool[Math.floor(Math.random() * initialPool.length)];
+      initialInv[i] = {
+        id: Math.random().toString(36).substr(2, 9),
+        shape,
+        image: availableColors[Math.floor(Math.random() * availableColors.length)],
+        size: Math.max(shape.length, shape[0].length),
+      };
+    }
+    setInventory(initialInv);
+  }, [currentSkin]);
+
+  const startGame = useCallback(() => {
+    const isGridEmpty = grid.every(row => row.every(cell => cell === null));
+    const isInvEmpty = inventory.every(b => b === null);
+    if (isGridEmpty && isInvEmpty) resetGame();
+    setGameStatus('playing');
+  }, [grid, inventory, resetGame]);
+
+  const getColorGlow = useCallback((image: string | null): string => {
+    const skin = currentSkin as string;
+    const neonMap: Record<string, string> = {
+      'color-1': 'rgba(255, 0, 255, 0.8)',
+      'color-2': 'rgba(0, 255, 255, 0.8)',
+      'color-3': 'rgba(57, 255, 20, 0.8)',
+      'color-4': 'rgba(255, 153, 0, 0.8)',
+      'color-5': 'rgba(138, 43, 226, 0.8)',
+    };
+    const classicMap: Record<string, string> = {
+      'color-1': 'rgba(239, 68, 68, 0.8)',
+      'color-2': 'rgba(59, 130, 246, 0.8)',
+      'color-3': 'rgba(34, 197, 94, 0.8)',
+      'color-4': 'rgba(234, 179, 8, 0.8)',
+      'color-5': 'rgba(168, 85, 247, 0.8)',
+    };
+    if (skin === 'gold') return 'rgba(234, 179, 8, 0.8)';
+    const map = skin === 'neon' ? neonMap : classicMap;
+    return image ? map[image] || 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)';
+  }, [currentSkin]);
+
+  const updatePreview = useCallback((blockId: string, row: number, col: number) => {
+    const block = inventory.find(b => b?.id === blockId);
+    if (!block || !canPlaceBlock(grid, block, { row, col })) {
+      setPreviewLines({ rows: [], cols: [], colors: {} });
+      return;
+    }
+    const tempGrid = grid.map(r => [...r]);
+    for (let r = 0; r < block.shape.length; r++) {
+      for (let c = 0; c < block.shape[r].length; c++) {
+        if (block.shape[r][c] === 1) tempGrid[row + r][col + c] = { image: block.image, id: 'preview' };
+      }
+    }
+    const rows: number[] = [];
+    const cols: number[] = [];
+    const colors: Record<string, string> = {};
+    const previewGlow = getColorGlow(block.image);
+    for (let r = 0; r < GRID_SIZE; r++) {
+      if (tempGrid[r].every(cell => cell !== null)) { rows.push(r); colors[`row-${r}`] = previewGlow; }
+    }
+    for (let c = 0; c < GRID_SIZE; c++) {
+      let full = true;
+      for (let r = 0; r < GRID_SIZE; r++) if (tempGrid[r][c] === null) { full = false; break; }
+      if (full) { cols.push(c); colors[`col-${c}`] = previewGlow; }
+    }
+    setPreviewLines({ rows, cols, colors });
+  }, [grid, inventory, canPlaceBlock, getColorGlow]);
+
+  const clearPreview = useCallback(() => setPreviewLines({ rows: [], cols: [], colors: {} }), []);
+
+  const checkGameOver = useCallback((currentGrid: Grid, currentInv: (Block | null)[]) => {
+    const activeBlocks = currentInv.filter((b): b is Block => b !== null);
+    if (activeBlocks.length === 0) return false;
+    for (const b of activeBlocks) {
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) if (canPlaceBlock(currentGrid, b, { row: r, col: c })) return false;
+      }
+    }
+    return true;
+  }, [canPlaceBlock]);
+
+  const placeBlock = useCallback((blockId: string, row: number, col: number) => {
+    const blockIndex = inventory.findIndex(b => b?.id === blockId);
+    if (blockIndex === -1) return false;
+    const block = inventory[blockIndex]!;
+    if (!canPlaceBlock(grid, block, { row, col })) return false;
+    clearPreview();
+    playSound('place');
+    const newGrid = grid.map(r => [...r]);
+    let cellsPlaced = 0;
+    for (let r = 0; r < block.shape.length; r++) {
+      for (let c = 0; c < block.shape[r].length; c++) {
+        if (block.shape[r][c] === 1) {
+          newGrid[row+r][col+c] = { image: block.image, id: `${blockId}-${r}-${c}` };
+          cellsPlaced++;
+        }
+      }
+    }
+    const rowsToClear: number[] = [];
+    const colsToClear: number[] = [];
+    for (let r = 0; r < GRID_SIZE; r++) if (newGrid[r].every(cell => cell !== null)) rowsToClear.push(r);
+    for (let c = 0; c < GRID_SIZE; c++) {
+      let f = true;
+      for (let r = 0; r < GRID_SIZE; r++) if (newGrid[r][c] === null) { f = false; break; }
+      if (f) colsToClear.push(c);
+    }
+    const clearedLines = rowsToClear.length + colsToClear.length;
+    const placementScore = cellsPlaced * 10;
+    if (clearedLines > 0) {
+      const newCombo = comboCount + clearedLines;
+      // Only play generic combo sound if NO shoutout will be triggered
+      if (newCombo < 2) {
+        playSound('combo');
+      }
+      const clearingGrid = newGrid.map((gr, r) => gr.map((cell, c) => (rowsToClear.includes(r) || colsToClear.includes(c)) ? (cell ? {...cell, isClearing: true} : cell) : cell));
+      setGrid(clearingGrid);
+      const updatedInv = [...inventory];
+      updatedInv[blockIndex] = null;
+      setInventory(updatedInv);
+      setComboCount(newCombo);
+      setComboGrace(3);
+      setShowCombo(true);
+      
+      // Trigger Shoutout
+      if (newCombo >= 2) {
+        let sText = 'NICE';
+        let sType = 'nice';
+        if (newCombo >= 4) { sText = 'GREAT'; sType = 'great'; }
+        if (newCombo >= 6) { sText = 'INCREDIBLE'; sType = 'incredible'; }
+        if (newCombo >= 8) { sText = 'GODLIKE'; sType = 'godlike'; }
+        
+        setComboShoutout({ text: sText, type: sType });
+        playSound(sType as any);
+        setTimeout(() => setComboShoutout(null), 2000);
+      }
+
+      setTimeout(() => setShowCombo(false), 1500);
+      setTimeout(() => {
+        const finalGrid = clearingGrid.map((gr, r) => gr.map((cell, c) => (rowsToClear.includes(r) || colsToClear.includes(c)) ? null : cell));
+        if (finalGrid.every(row => row.every(cell => cell === null))) {
+          playSound('perfect');
+          setComboCount(prev => prev + 10);
+          setShowPerfect(true);
+          setTimeout(() => setShowPerfect(false), 3000);
+        }
+        setGrid(finalGrid);
+        setScore(prev => prev + placementScore + Math.floor((clearedLines * 100) * (1 + (newCombo * 0.1))));
+        if (updatedInv.every(b => b === null)) generateInventory();
+        else if (checkGameOver(finalGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
+      }, 400);
+    } else {
+      const newGrace = comboGrace - 1;
+      setComboGrace(newGrace);
+      if (newGrace <= 0) { setComboCount(0); setComboGrace(3); }
+      setShowCombo(false);
+      const updatedInv = [...inventory];
+      updatedInv[blockIndex] = null;
+      setInventory(updatedInv);
+      setGrid(newGrid);
+      setScore(prev => prev + placementScore);
+      if (updatedInv.every(b => b === null)) generateInventory();
+      else if (checkGameOver(newGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
+    }
+    return true;
+  }, [grid, inventory, comboCount, comboGrace, canPlaceBlock, generateInventory, checkGameOver, clearPreview, playSound]);
+
+  const goToMenu = useCallback(() => setGameStatus('menu'), []);
+
+  return {
+    grid, score, inventory, gameOver, gameStatus, setGameStatus,
+    comboCount, showCombo, showPerfect, comboShoutout, isMuted, toggleMute,
+    currentSkin, changeSkin, previewLines, placeBlock, updatePreview,
+    clearPreview, resetGame, startGame, goToMenu, cycleSkin
+  };
+};
