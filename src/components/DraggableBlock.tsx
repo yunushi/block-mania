@@ -59,6 +59,10 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
 
   const latestPointerRef = useRef({ x: 0, y: 0 });
 
+  // Pure DOM handlers for ultimate zero-lag dragging
+  const handleMove = useRef<(e: PointerEvent) => void>(null as any);
+  const handleUp = useRef<(e: PointerEvent) => void>(null as any);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!blockRef.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -93,99 +97,76 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
     }
     
     setIsDragging(true);
-  };
 
-  const findNearestCell = (clientX: number, clientY: number) => {
-    let nearest = null;
-    let minDist = Infinity;
-    const maxDistSq = Math.pow(cellSize * 1.5, 2); // Sweet spot for snapping - increased for easiest placement!
-    
-    for (const cell of gridCellsRef.current) {
-        const distSq = Math.pow(cell.x - clientX, 2) + Math.pow(cell.y - clientY, 2);
-        if (distSq < minDist && distSq < maxDistSq) {
-            minDist = distSq;
-            nearest = cell;
-        }
-    }
-    return nearest;
-  };
+    handleMove.current = (moveEvent: PointerEvent) => {
+      // 1:1 Parity directly to hardware pointer (No offsets!)
+      let newX = moveEvent.clientX - startPos.current.x;
+      let newY = moveEvent.clientY - startPos.current.y;
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging || !blockRef.current) return;
-    
-    // We could restrict movement strictly here, but to avoid math anomalies we just let the bounding box handle offset
-    // Mobile jump offset so block isn't occluded by finger
-    const mobileOffset = cellSize < 44 ? 70 : 40;
-    
-    let newX = e.clientX - startPos.current.x;
-    let newY = e.clientY - startPos.current.y - mobileOffset;
+      dragOffsetRef.current = { x: newX, y: newY };
+      latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
 
-    dragOffsetRef.current = { x: newX, y: newY };
-    latestPointerRef.current = { x: e.clientX, y: e.clientY };
-
-    // BYPASS REACT RENDER LOOP FOR ULTIMATE FLUIDITY (120 FPS Dragging!)
-    blockRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) scale(1)`;
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isDragging || !blockRef.current) return;
-    
-    setIsDragging(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
-
-    // Instead of relying purely on pointer coordinates, use the 100% correct drag offsets
-    let newX = dragOffsetRef.current.x;
-    let newY = dragOffsetRef.current.y;
-    
-    let currentScale = 1.0;
-    const scaledWidth = blockWidthFull;
-    const scaledHeight = blockHeightFull;
-    
-    // Current center of the block is simply the starting center + translation offset!
-    const currentCenterX = startCenterRef.current.x + newX;
-    const currentCenterY = startCenterRef.current.y + newY;
-    
-    // The visual top-left of the fully dragged block:
-    const topLeftX = currentCenterX - scaledWidth / 2;
-    const topLeftY = currentCenterY - scaledHeight / 2;
-
-    // Find the first solid block rather than empty [0][0] space
-    let firstSolidR = 0, firstSolidC = 0;
-    for (let r = 0; r < rows; r++) {
-      let found = false;
-      for (let c = 0; c < columns; c++) {
-        if (block.shape[r][c] === 1) {
-          firstSolidR = r;
-          firstSolidC = c;
-          found = true;
-          break;
-        }
+      if (blockRef.current) {
+        blockRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) scale(1)`;
       }
-      if (found) break;
-    }
+    };
 
-    // The visually perceived center point of the primary solid cell
-    const checkX = topLeftX + firstSolidC * (cellSize + GRID_GAP) + cellSize / 2;
-    const checkY = topLeftY + firstSolidR * (cellSize + GRID_GAP) + cellSize / 2;
+    handleUp.current = (upEvent: PointerEvent) => {
+      window.removeEventListener('pointermove', handleMove.current);
+      window.removeEventListener('pointerup', handleUp.current);
+      window.removeEventListener('pointercancel', handleUp.current);
+      
+      setIsDragging(false);
 
-    const cell = findNearestCell(checkX, checkY);
+      let newX = dragOffsetRef.current.x;
+      let newY = dragOffsetRef.current.y;
+      let currentScale = 1.0;
+      const scaledWidth = blockWidthFull;
+      const scaledHeight = blockHeightFull;
+      
+      const currentCenterX = startCenterRef.current.x + newX;
+      const currentCenterY = startCenterRef.current.y + newY;
+      const topLeftX = currentCenterX - scaledWidth / 2;
+      const topLeftY = currentCenterY - scaledHeight / 2;
 
-    if (cell) {
-        onPlace(block.id, cell.row - firstSolidR, cell.col - firstSolidC);
-    }
-    
-    // Re-enable transition as it flies back to inventory if placement fails
-    if (blockRef.current) {
-        blockRef.current.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-        blockRef.current.style.transform = `translate3d(0px, 0px, 0) scale(${invScale})`;
-    }
-    dragOffsetRef.current = { x: 0, y: 0 };
+      let firstSolidR = 0, firstSolidC = 0;
+      for (let r = 0; r < rows; r++) {
+        let found = false;
+        for (let c = 0; c < columns; c++) {
+          if (block.shape[r][c] === 1) {
+            firstSolidR = r;
+            firstSolidC = c;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+
+      const checkX = topLeftX + firstSolidC * (cellSize + GRID_GAP) + cellSize / 2;
+      const checkY = topLeftY + firstSolidR * (cellSize + GRID_GAP) + cellSize / 2;
+      const cell = findNearestCell(checkX, checkY);
+
+      if (cell) {
+          onPlace(block.id, cell.row - firstSolidR, cell.col - firstSolidC);
+      }
+      
+      if (blockRef.current) {
+          blockRef.current.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+          blockRef.current.style.transform = `translate3d(0px, 0px, 0) scale(${invScale})`;
+      }
+      dragOffsetRef.current = { x: 0, y: 0 };
+    };
+
+    window.addEventListener('pointermove', handleMove.current, { passive: true });
+    window.addEventListener('pointerup', handleUp.current);
+    window.addEventListener('pointercancel', handleUp.current);
   };
 
   return (
     <div
       ref={blockRef}
-      className={`relative p-0 rounded-lg cursor-grab active:cursor-grabbing select-none`}
+      className={`relative p-0 rounded-lg select-none`}
       style={{
         width: blockWidthFull,
         height: blockHeightFull,
@@ -198,16 +179,6 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
         willChange: 'transform',
       }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={() => {
-        setIsDragging(false);
-        dragOffsetRef.current = { x: 0, y: 0 };
-        if (blockRef.current) {
-            blockRef.current.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-            blockRef.current.style.transform = `translate3d(0px, 0px, 0) scale(${invScale})`;
-        }
-      }}
     >
       {/* Invisible expanded hit area so users can grab from the surrounding slot */}
       <div className={`absolute -inset-10 z-0 ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`} />

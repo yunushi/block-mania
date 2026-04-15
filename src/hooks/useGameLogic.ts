@@ -190,13 +190,18 @@ export const useGameLogic = () => {
     else if (score < 16000) activeShapePool = [...SHAPES_TIERS.easy, ...SHAPES_TIERS.medium];
     else activeShapePool = ALL_SHAPES;
 
-    let spawned3x3 = false;
-    const spawnedShapes = new Map<string, number>();
+    let spawnedHelpfulCount = 0;
+    
     for (let i = 0; i < 3; i++) {
         let shape: number[][] | null = null;
         
-        // Helpful / Line-completing logic
-        if (lineCompletingIndices.length > 0 && Math.random() < 1.0) { // Max helpful logic chance
+        let helpProbability = 0;
+        if (score < 5000) helpProbability = 1.0;
+        else if (score < 15000) helpProbability = 0.5;
+        else if (score < 30000) helpProbability = 0.2;
+        
+        // Provide early-game massive assistance 
+        if (lineCompletingIndices.length > 0 && Math.random() < helpProbability && spawnedHelpfulCount < 1) { 
           // Filter out diagonal shapes AND 3x3 if already spawned
           const filteredLineCompleters = lineCompletingIndices.filter(idx => {
             if (DIAGONAL_INDICES.includes(idx)) return false;
@@ -210,17 +215,19 @@ export const useGameLogic = () => {
           const targetIndices = (filteredLineCompleters.length > 0) 
             ? filteredLineCompleters 
             : lineCompletingIndices.filter(idx => !(idx === 35 && spawned3x3)); // At least prevent 3x3 double
-            
           if (targetIndices.length === 0) {
               shape = ALL_SHAPES[lineCompletingIndices[Math.floor(Math.random() * lineCompletingIndices.length)]];
-          } else {
+            } else {
               shape = ALL_SHAPES[targetIndices[Math.floor(Math.random() * targetIndices.length)]];
-          }
+            }
+            spawnedHelpfulCount++;
         } else {
           const filteredPool = activeShapePool.filter((s) => {
             const index = ALL_SHAPES.indexOf(s);
-            // Reduce probability for 1x1 block
-            if (index === 0) return Math.random() < 0.15;
+            
+            // Early game spawns 1x1 pieces incredibly often to act as jokers
+            if (index === 0 && score < 10000) return Math.random() < 0.6;
+            else if (index === 0) return Math.random() < 0.15;
             
             // Dynamic rarity for 3x3 (Index 35) - gets rarer as score increases
             if (index === 35) {
@@ -344,7 +351,7 @@ export const useGameLogic = () => {
       if (f) colsToClear.push(c);
     }
     const clearedLines = rowsToClear.length + colsToClear.length;
-    const placementScore = cellsPlaced * 10;
+    const placementScore = cellsPlaced * 20; // Massively increased base score
     if (clearedLines > 0) {
       const newCombo = comboCount + clearedLines;
       // Only play generic combo sound if NO shoutout will be triggered
@@ -383,7 +390,7 @@ export const useGameLogic = () => {
           setTimeout(() => setShowPerfect(false), 3000);
         }
         setGrid(finalGrid);
-        setScore(prev => prev + placementScore + Math.floor((clearedLines * 100) * (1 + (newCombo * 0.1))));
+        setScore(prev => prev + placementScore + Math.floor((clearedLines * 400) * (1 + (newCombo * 0.5))));
         if (updatedInv.every(b => b === null)) generateInventory();
         else if (checkGameOver(finalGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
       }, 400);
