@@ -46,6 +46,8 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const visualLeftRef = useRef(0);
   const visualTopRef = useRef(0);
+  const visualWidthRef = useRef(0);
+  const visualHeightRef = useRef(0);
 
   // Auto-scale to fit the inventory slot (with some padding)
   const blockWidthFull = block.shape[0].length * cellSize;
@@ -54,35 +56,49 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
   // On mobile, boost drag visual scale so block is easier to see under finger
   const dragScale = cellSize < 44 ? 1.15 : 1.0;
   
+  const gridCellsRef = useRef<{row: number, col: number, x: number, y: number}[]>([]);
+  const lastEventCellRef = useRef<{row: number, col: number} | null>(null);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!blockRef.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     
+    // Cache grid cell coordinates on click to prevent ultra-slow DOM queries during move!
+    const cells = document.querySelectorAll('[data-row][data-col]');
+    gridCellsRef.current = Array.from(cells).map(cell => {
+       const cellRect = cell.getBoundingClientRect();
+       return {
+         row: parseInt(cell.getAttribute('data-row') || '0'),
+         col: parseInt(cell.getAttribute('data-col') || '0'),
+         x: cellRect.left + cellRect.width / 2,
+         y: cellRect.top + cellRect.height / 2,
+       };
+    });
+    lastEventCellRef.current = null;
+
     const rect = blockRef.current.getBoundingClientRect();
     visualLeftRef.current = rect.left;
     visualTopRef.current = rect.top;
+    visualWidthRef.current = rect.width;
+    visualHeightRef.current = rect.height;
 
     setStartPos({ x: e.clientX, y: e.clientY });
     setIsDragging(true);
   };
 
   const findNearestCell = (clientX: number, clientY: number) => {
-    // Check a small grid of points around the cursor/top-left to find the nearest grid cell
-    // This makes snapping much more 'magnetic'
-    const offsets = [
-      { x: 0, y: 0 },
-      { x: cellSize / 2, y: cellSize / 2 },
-      { x: -cellSize / 2, y: -cellSize / 2 },
-      { x: cellSize / 2, y: -cellSize / 2 },
-      { x: -cellSize / 2, y: cellSize / 2 },
-    ];
-
-    for (const offset of offsets) {
-      const elements = document.elementsFromPoint(clientX + offset.x, clientY + offset.y);
-      const cell = elements.find(el => el.hasAttribute('data-row'));
-      if (cell) return cell;
+    let nearest = null;
+    let minDist = Infinity;
+    const maxDistSq = Math.pow(cellSize * 0.8, 2); // Sweet spot for snapping
+    
+    for (const cell of gridCellsRef.current) {
+        const distSq = Math.pow(cell.x - clientX, 2) + Math.pow(cell.y - clientY, 2);
+        if (distSq < minDist && distSq < maxDistSq) {
+            minDist = distSq;
+            nearest = cell;
+        }
     }
-    return null;
+    return nearest;
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -91,66 +107,55 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
     let newX = e.clientX - startPos.x;
     let newY = e.clientY - startPos.y;
 
-    // Constraint logic: Keep block within viewport
-    const rect = blockRef.current.getBoundingClientRect();
+    // Constraint logic: Keep block within viewport using CACHED bounds (NO REFLOW)
     const futureLeft = visualLeftRef.current + newX;
     const futureTop = visualTopRef.current + newY;
 
     if (futureLeft < 0) newX = -visualLeftRef.current;
     if (futureTop < 0) newY = -visualTopRef.current;
-    if (futureLeft + rect.width > window.innerWidth) newX = window.innerWidth - visualLeftRef.current - rect.width;
-    if (futureTop + rect.height > window.innerHeight) newY = window.innerHeight - visualTopRef.current - rect.height;
+    if (futureLeft + visualWidthRef.current > window.innerWidth) newX = window.innerWidth - visualLeftRef.current - visualWidthRef.current;
+    if (futureTop + visualHeightRef.current > window.innerHeight) newY = window.innerHeight - visualTopRef.current - visualHeightRef.current;
 
     setDragOffset({ x: newX, y: newY });
 
     if (onDragMove) {
-      const checkX = rect.left + (cellSize / 2);
-      const checkY = rect.top + (cellSize / 2);
-
-      const originalDisplay = blockRef.current.style.display;
-      blockRef.current.style.display = 'none';
+      // Calculate where the top-left block of the shape is
+      let currentScale = dragScale;
+      // calculate left offset difference due to scale
+      const scaledWidth = blockWidthFull * currentScale;
+      const widthDiff = scaledWidth - blockWidthFull;
       
+      const checkX = visualLeftRef.current + newX - (widthDiff/2) + (cellSize / 2 * currentScale);
+      const checkY = visualTopRef.current + newY - ((blockHeightFull * currentScale - blockHeightFull)/2) + (cellSize / 2 * currentScale);
+
       const cell = findNearestCell(checkX, checkY);
       
       if (cell) {
-        const row = parseInt(cell.getAttribute('data-row') || '0');
-        const col = parseInt(cell.getAttribute('data-col') || '0');
-        onDragMove(block.id, row, col);
+        // ONLY trigger react re-render if the cell actually shifted!
+        if (lastEventCellRef.current?.row !== cell.row || lastEventCellRef.current?.col !== cell.col) {
+           lastEventCellRef.current = { row: cell.row, col: cell.col };
+           onDragMove(block.id, cell.row, cell.col);
+        }
       } else {
-        onDragEnd?.();
+        if (lastEventCellRef.current !== null) {
+           lastEventCellRef.current = null;
+           onDragEnd?.();
+        }
       }
-      
-      blockRef.current.style.display = originalDisplay;
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDragging || !blockRef.current) return;
     
-    const rect = blockRef.current.getBoundingClientRect();
-    const visualLeft = rect.left;
-    const visualTop = rect.top;
-
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     e.currentTarget.releasePointerCapture(e.pointerId);
     onDragEnd?.();
 
-    const originalDisplay = blockRef.current.style.display;
-    blockRef.current.style.display = 'none';
-
-    const checkX = visualLeft + (cellSize / 2);
-    const checkY = visualTop + (cellSize / 2);
-
-    const cell = findNearestCell(checkX, checkY);
-
-    if (cell) {
-      const row = parseInt(cell.getAttribute('data-row') || '0');
-      const col = parseInt(cell.getAttribute('data-col') || '0');
-      onPlace(block.id, row, col);
+    if (lastEventCellRef.current) {
+        onPlace(block.id, lastEventCellRef.current.row, lastEventCellRef.current.col);
     }
-    
-    blockRef.current.style.display = originalDisplay;
   };
 
   return (
