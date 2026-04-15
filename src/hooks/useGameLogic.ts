@@ -9,6 +9,26 @@ const SKIN_ASSETS = {
   gold: ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
 };
 
+const AUDIO_URLS = {
+  place: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+  combo: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',
+  perfect: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
+  nice: 'https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3',
+  great: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',
+  incredible: 'https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3',
+  godlike: 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3',
+};
+
+// Global audio cache for iOS Safari preloading
+const audioCache: Record<string, HTMLAudioElement> = {};
+if (typeof window !== 'undefined') {
+  Object.entries(AUDIO_URLS).forEach(([k, v]) => {
+    const audio = new Audio(v);
+    audio.preload = 'auto'; // Force iOS to cache
+    audioCache[k] = audio;
+  });
+}
+
 const SHAPES_TIERS = {
   easy: [
     [[1]], // 1x1
@@ -73,35 +93,29 @@ export const useGameLogic = () => {
   const [comboShoutout, setComboShoutout] = useState<{ text: string, type: string } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [currentSkin, setCurrentSkin] = useState<'classic' | 'neon' | 'gold'>('classic');
-  const [previewLines, setPreviewLines] = useState<{ rows: number[], cols: number[], colors: Record<string, string> }>({
-    rows: [],
-    cols: [],
-    colors: {}
-  });
-
-  const cycleSkin = useCallback(() => {
-    const skins: ('classic' | 'neon' | 'gold')[] = ['classic', 'neon', 'gold'];
-    const nextIndex = (skins.indexOf(currentSkin) + 1) % skins.length;
-    setCurrentSkin(skins[nextIndex]);
-  }, [currentSkin]);
+  const cycleSkin = useCallback(() => {}, []);
 
   const toggleMute = useCallback(() => setIsMuted(prev => !prev), []);
   const changeSkin = useCallback((skin: 'classic' | 'neon' | 'gold') => setCurrentSkin(skin), []);
 
-  const playSound = useCallback((type: 'place' | 'combo' | 'perfect' | 'nice' | 'great' | 'incredible' | 'godlike') => {
+  const playSound = useCallback((type: keyof typeof AUDIO_URLS) => {
     if (isMuted) return;
-    const urls = {
-      place: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Crisp "şık" sound
-      combo: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', // Bling
-      perfect: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', // Fanfare
-      nice: 'https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3', // Chime 1
-      great: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', // Chime 2
-      incredible: 'https://assets.mixkit.co/active_storage/sfx/2021/2021-preview.mp3', // Major success
-      godlike: 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3', // Epic
-    };
-    const audio = new Audio(urls[type]);
-    audio.volume = type === 'place' ? 1.0 : 0.8;
-    audio.play().catch(() => {});
+    const audio = audioCache[type];
+    if (audio) {
+      // Re-use cached audio to avoid iOS network delay drops
+      audio.currentTime = 0;
+      audio.volume = type === 'place' ? 1.0 : 0.8;
+      audio.play().catch(() => {
+        // Fallback for overlapping sounds
+        const fallback = new Audio(AUDIO_URLS[type]);
+        fallback.volume = type === 'place' ? 1.0 : 0.8;
+        fallback.play().catch(() => {});
+      });
+    } else {
+        const fallback = new Audio(AUDIO_URLS[type]);
+        fallback.volume = type === 'place' ? 1.0 : 0.8;
+        fallback.play().catch(() => {});
+    }
   }, [isMuted]);
 
   const canPlaceBlock = useCallback((targetGrid: Grid, block: Block, pos: Position) => {
@@ -266,61 +280,21 @@ export const useGameLogic = () => {
   }, [currentSkin]);
 
   const startGame = useCallback(() => {
-    const isGridEmpty = grid.every(row => row.every(cell => cell === null));
-    const isInvEmpty = inventory.every(b => b === null);
-    if (isGridEmpty && isInvEmpty) resetGame();
+    if (gameOver) {
+      resetGame();
+    } else {
+      const isGridEmpty = grid.every(row => row.every(cell => cell === null));
+      const isInvEmpty = inventory.every(b => b === null);
+      if (isGridEmpty && isInvEmpty) resetGame();
+    }
     setGameStatus('playing');
-  }, [grid, inventory, resetGame]);
-
-  const getColorGlow = useCallback((image: string | null): string => {
-    const skin = currentSkin as string;
-    const neonMap: Record<string, string> = {
-      'color-1': 'rgba(255, 0, 255, 0.8)',
-      'color-2': 'rgba(0, 255, 255, 0.8)',
-      'color-3': 'rgba(57, 255, 20, 0.8)',
-      'color-4': 'rgba(255, 153, 0, 0.8)',
-      'color-5': 'rgba(138, 43, 226, 0.8)',
-    };
-    const classicMap: Record<string, string> = {
-      'color-1': 'rgba(239, 68, 68, 0.8)',
-      'color-2': 'rgba(59, 130, 246, 0.8)',
-      'color-3': 'rgba(34, 197, 94, 0.8)',
-      'color-4': 'rgba(234, 179, 8, 0.8)',
-      'color-5': 'rgba(168, 85, 247, 0.8)',
-    };
-    if (skin === 'gold') return 'rgba(234, 179, 8, 0.8)';
-    const map = skin === 'neon' ? neonMap : classicMap;
-    return image ? map[image] || 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)';
-  }, [currentSkin]);
+  }, [grid, inventory, resetGame, gameOver]);
 
   const updatePreview = useCallback((blockId: string, row: number, col: number) => {
-    const block = inventory.find(b => b?.id === blockId);
-    if (!block || !canPlaceBlock(grid, block, { row, col })) {
-      setPreviewLines({ rows: [], cols: [], colors: {} });
-      return;
-    }
-    const tempGrid = grid.map(r => [...r]);
-    for (let r = 0; r < block.shape.length; r++) {
-      for (let c = 0; c < block.shape[r].length; c++) {
-        if (block.shape[r][c] === 1) tempGrid[row + r][col + c] = { image: block.image, id: 'preview' };
-      }
-    }
-    const rows: number[] = [];
-    const cols: number[] = [];
-    const colors: Record<string, string> = {};
-    const previewGlow = getColorGlow(block.image);
-    for (let r = 0; r < GRID_SIZE; r++) {
-      if (tempGrid[r].every(cell => cell !== null)) { rows.push(r); colors[`row-${r}`] = previewGlow; }
-    }
-    for (let c = 0; c < GRID_SIZE; c++) {
-      let full = true;
-      for (let r = 0; r < GRID_SIZE; r++) if (tempGrid[r][c] === null) { full = false; break; }
-      if (full) { cols.push(c); colors[`col-${c}`] = previewGlow; }
-    }
-    setPreviewLines({ rows, cols, colors });
-  }, [grid, inventory, canPlaceBlock, getColorGlow]);
+    // Deprecated for raw mobile performance
+  }, []);
 
-  const clearPreview = useCallback(() => setPreviewLines({ rows: [], cols: [], colors: {} }), []);
+  const clearPreview = useCallback(() => {}, []);
 
   const checkGameOver = useCallback((currentGrid: Grid, currentInv: (Block | null)[]) => {
     const activeBlocks = currentInv.filter((b): b is Block => b !== null);
@@ -423,7 +397,7 @@ export const useGameLogic = () => {
   return {
     grid, score, inventory, gameOver, gameStatus, setGameStatus,
     comboCount, showCombo, showPerfect, comboShoutout, isMuted, toggleMute,
-    currentSkin, changeSkin, previewLines, placeBlock, updatePreview,
+    currentSkin, changeSkin, placeBlock, updatePreview,
     clearPreview, resetGame, startGame, goToMenu, cycleSkin
   };
 };

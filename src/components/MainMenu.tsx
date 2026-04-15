@@ -5,23 +5,15 @@ import React from 'react';
 interface MainMenuProps {
   onPlay: () => void;
   highScore: number;
-  currentSkin: 'classic' | 'neon' | 'gold';
+  hasActiveGame: boolean;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ onPlay, highScore, currentSkin }) => {
+const MainMenu: React.FC<MainMenuProps> = ({ onPlay, highScore, hasActiveGame }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 relative overflow-hidden bg-[#0f172a]">
       {/* Background Decorative Elements */}
-      <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000 ${
-        currentSkin === 'neon' ? 'bg-purple-500/20' : 
-        currentSkin === 'gold' ? 'bg-yellow-500/20' : 
-        'bg-blue-500/10'
-      }`} />
-      <div className={`absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000 ${
-        currentSkin === 'neon' ? 'bg-pink-500/20' : 
-        currentSkin === 'gold' ? 'bg-orange-500/20' : 
-        'bg-purple-500/10'
-      }`} />
+      <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000 bg-blue-500/10`} />
+      <div className={`absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000 bg-purple-500/10`} />
 
       <div className="relative z-10 flex flex-col items-center gap-12 max-w-lg w-full">
         {/* Title */}
@@ -46,7 +38,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, highScore, currentSkin }) =
           <div className="absolute inset-0 bg-blue-600 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity animate-pulse" />
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-[2rem] border-4 border-white/20 shadow-2xl transition-transform group-hover:scale-105 active:scale-95" />
           <span className="relative text-4xl font-black text-white italic tracking-widest uppercase">
-            {highScore > 0 ? 'RESUME' : 'PLAY'}
+            {hasActiveGame ? 'RESUME' : 'PLAY'}
           </span>
         </button>
 

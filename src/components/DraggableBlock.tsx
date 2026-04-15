@@ -6,11 +6,9 @@ import { Block } from '@/types/game';
 interface DraggableBlockProps {
   block: Block;
   onPlace: (blockId: string, row: number, col: number) => boolean;
-  onDragMove?: (blockId: string, row: number, col: number) => void;
-  onDragEnd?: () => void;
 }
 
-const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragMove, onDragEnd }) => {
+const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace }) => {
   const getColorClass = (image: string | null) => {
     if (!image) return '';
     // Map legacy names to generic color tokens if they appear
@@ -59,6 +57,8 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
   const gridCellsRef = useRef<{row: number, col: number, x: number, y: number}[]>([]);
   const lastEventCellRef = useRef<{row: number, col: number} | null>(null);
 
+  const latestPointerRef = useRef({ x: 0, y: 0 });
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!blockRef.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -83,6 +83,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
     visualHeightRef.current = rect.height;
 
     setStartPos({ x: e.clientX, y: e.clientY });
+    latestPointerRef.current = { x: e.clientX, y: e.clientY };
     setIsDragging(true);
   };
 
@@ -104,6 +105,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging || !blockRef.current) return;
     
+    latestPointerRef.current = { x: e.clientX, y: e.clientY };
     let newX = e.clientX - startPos.x;
     let newY = e.clientY - startPos.y;
 
@@ -117,32 +119,6 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
     if (futureTop + visualHeightRef.current > window.innerHeight) newY = window.innerHeight - visualTopRef.current - visualHeightRef.current;
 
     setDragOffset({ x: newX, y: newY });
-
-    if (onDragMove) {
-      // Calculate where the top-left block of the shape is
-      let currentScale = dragScale;
-      // calculate left offset difference due to scale
-      const scaledWidth = blockWidthFull * currentScale;
-      const widthDiff = scaledWidth - blockWidthFull;
-      
-      const checkX = visualLeftRef.current + newX - (widthDiff/2) + (cellSize / 2 * currentScale);
-      const checkY = visualTopRef.current + newY - ((blockHeightFull * currentScale - blockHeightFull)/2) + (cellSize / 2 * currentScale);
-
-      const cell = findNearestCell(checkX, checkY);
-      
-      if (cell) {
-        // ONLY trigger react re-render if the cell actually shifted!
-        if (lastEventCellRef.current?.row !== cell.row || lastEventCellRef.current?.col !== cell.col) {
-           lastEventCellRef.current = { row: cell.row, col: cell.col };
-           onDragMove(block.id, cell.row, cell.col);
-        }
-      } else {
-        if (lastEventCellRef.current !== null) {
-           lastEventCellRef.current = null;
-           onDragEnd?.();
-        }
-      }
-    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -151,10 +127,26 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
     setIsDragging(false);
     setDragOffset({ x: 0, y: 0 });
     e.currentTarget.releasePointerCapture(e.pointerId);
-    onDragEnd?.();
 
-    if (lastEventCellRef.current) {
-        onPlace(block.id, lastEventCellRef.current.row, lastEventCellRef.current.col);
+    // Instead of using lastEventCellRef (which is no longer tracked in pointerMove),
+    // we calculate the placement cell right here based on final pointer position!
+    // Use the latest reliable pointer coords, iOS sometimes reports 0/0 on Up events
+    const finalX = latestPointerRef.current.x;
+    const finalY = latestPointerRef.current.y;
+    let newX = finalX - startPos.x;
+    let newY = finalY - startPos.y;
+    
+    let currentScale = dragScale;
+    const scaledWidth = blockWidthFull * currentScale;
+    const widthDiff = scaledWidth - blockWidthFull;
+    
+    const checkX = visualLeftRef.current + newX - (widthDiff/2) + (cellSize / 2 * currentScale);
+    const checkY = visualTopRef.current + newY - ((blockHeightFull * currentScale - blockHeightFull)/2) + (cellSize / 2 * currentScale);
+
+    const cell = findNearestCell(checkX, checkY);
+
+    if (cell) {
+        onPlace(block.id, cell.row, cell.col);
     }
   };
 
@@ -170,6 +162,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
         zIndex: isDragging ? 9999 : 10,
         pointerEvents: 'auto',
         transformOrigin: 'center center',
+        willChange: 'transform',
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -177,11 +170,10 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
       onPointerCancel={() => {
         setIsDragging(false);
         setDragOffset({ x: 0, y: 0 });
-        onDragEnd?.();
       }}
     >
       <div 
-        className={`grid shadow-2xl ${isDragging ? 'opacity-100 brightness-110' : 'opacity-100'}`} 
+        className={`grid ${isDragging ? 'opacity-90' : 'opacity-100'}`} 
         style={{
           gridTemplateColumns: `repeat(${block.shape[0].length}, 1fr)`,
           gap: '2px',
@@ -191,7 +183,7 @@ const DraggableBlock: React.FC<DraggableBlockProps> = ({ block, onPlace, onDragM
         {block.shape.map((row, r) => (row.map((val, c) => (
           <div
             key={`${r}-${c}`}
-            className={`rounded-sm overflow-hidden ${val === 0 ? 'opacity-0' : 'opacity-100 shadow-[inset_0_0_12px_rgba(255,255,255,0.4)]'}`}
+            className={`rounded-sm overflow-hidden ${val === 0 ? 'opacity-0' : 'opacity-100'}`}
             style={{ width: cellSize, height: cellSize }}
           >
             {val === 1 && (

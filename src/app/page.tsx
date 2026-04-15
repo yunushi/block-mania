@@ -11,9 +11,9 @@ export default function Home() {
   const {
     grid, score, inventory, gameOver,
     previewLines, comboCount, showCombo, showPerfect, comboShoutout,
-    isMuted, toggleMute, currentSkin, changeSkin,
+    isMuted, toggleMute,
     gameStatus, setGameStatus,
-    placeBlock, updatePreview, clearPreview, resetGame, startGame, goToMenu, cycleSkin
+    placeBlock, updatePreview, clearPreview, resetGame, startGame, goToMenu
   } = useGameLogic();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -33,12 +33,14 @@ export default function Home() {
     }
   }, [score, highScore]);
 
+  const hasActiveGame = score > 0 && !gameOver;
+
   if (gameStatus === 'menu') {
-    return <MainMenu onPlay={startGame} highScore={highScore} currentSkin={currentSkin} />;
+    return <MainMenu onPlay={startGame} highScore={highScore} hasActiveGame={hasActiveGame} />;
   }
 
   return (
-    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[#0f172a] skin-${currentSkin}`}>
+    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[#0f172a]`}>
       {/* Background Decorative Elements - Static Colors as requested */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none bg-blue-500/10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none bg-purple-500/10" />
@@ -67,21 +69,15 @@ export default function Home() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        currentSkin={currentSkin}
-        onCycleSkin={cycleSkin}
         onMenu={goToMenu}
         onReset={resetGame}
       />
 
       {/* Game Board Container */}
-      <div className={`relative p-3 rounded-[2.5rem] bg-slate-900/40 shadow-[0_0_80px_rgba(0,0,0,0.6)] border border-white/10 z-10 ink-drop-container backdrop-blur-md transition-all ${currentSkin === 'neon' ? 'border-purple-500/30' :
-          currentSkin === 'gold' ? 'border-yellow-500/30' :
-            ''
-        }`}>
+      <div className={`relative p-3 rounded-[2.5rem] bg-slate-900/60 border border-white/10 z-10 transition-all`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
-          previewLines={previewLines}
           showPerfect={showPerfect}
         />
 
@@ -134,15 +130,10 @@ export default function Home() {
       </div>
 
       {/* Controller / Inventory */}
-      <div className={`w-full flex justify-center relative z-30 ${currentSkin === 'neon' ? 'skin-neon' :
-          currentSkin === 'gold' ? 'skin-gold' :
-            ''
-        }`}>
+      <div className={`w-full flex justify-center relative z-30`}>
         <BlockInventory
           blocks={inventory}
           onPlace={placeBlock}
-          onDragMove={updatePreview}
-          onDragEnd={clearPreview}
         />
       </div>
 

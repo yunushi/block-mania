@@ -6,11 +6,10 @@ import { Grid } from '@/types/game';
 interface GameBoardProps {
   grid: Grid;
   onDrop: (blockId: string, row: number, col: number) => void;
-  previewLines?: { rows: number[], cols: number[], colors: Record<string, string> };
   showPerfect?: boolean;
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ grid, previewLines, showPerfect }) => {
+const GameBoard: React.FC<GameBoardProps> = ({ grid, showPerfect }) => {
   const getColorClass = (image: string | null) => {
     if (!image) return '';
     const legacyMap: Record<string, string> = {
@@ -33,12 +32,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ grid, previewLines, showPerfect }
 
       {grid.map((row, r) => (
         row.map((cell, c) => {
-          const isRowPreview = previewLines?.rows.includes(r);
-          const isColPreview = previewLines?.cols.includes(c);
-          const previewColor = isRowPreview
-            ? previewLines?.colors[`row-${r}`]
-            : isColPreview ? previewLines?.colors[`col-${c}`] : null;
-
           return (
             <div
               key={`${r}-${c}`}
@@ -46,9 +39,9 @@ const GameBoard: React.FC<GameBoardProps> = ({ grid, previewLines, showPerfect }
               style={{
                 width: 'var(--cell-size)',
                 height: 'var(--cell-size)',
-                boxShadow: previewColor ? `inset 0 0 15px ${previewColor}, 0 0 10px ${previewColor}` : 'none',
-                borderColor: previewColor ? previewColor : 'transparent',
-                borderWidth: previewColor ? '2px' : '0'
+                boxShadow: 'none',
+                borderColor: 'transparent',
+                borderWidth: '0'
               }}
               data-row={r}
               data-col={c}
