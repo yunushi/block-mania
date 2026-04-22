@@ -191,6 +191,8 @@ export const useGameLogic = () => {
     else activeShapePool = ALL_SHAPES;
 
     let spawnedHelpfulCount = 0;
+    const spawnedShapes = new Map<string, number>();
+    let spawned3x3 = false;
     
     for (let i = 0; i < 3; i++) {
         let shape: number[][] | null = null;
