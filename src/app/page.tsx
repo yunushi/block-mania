@@ -45,11 +45,11 @@ export default function Home() {
 
       {/* HEADER Layout from Image */}
       <div className="w-full max-w-lg flex flex-col gap-4 px-6 pt-4 z-20">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           {/* Top Left: Crown + High Score */}
-          <div className="flex items-center gap-2">
-            <span className="text-4xl filter drop-shadow-md">👑</span>
-            <span className="text-4xl font-black text-[#fbbf24] drop-shadow-md tracking-tighter">
+          <div className="flex items-center gap-1 mt-2">
+            <span className="text-3xl filter drop-shadow-sm">👑</span>
+            <span className="text-3xl font-bold text-[#fbb034] tracking-tight">
               {highScore}
             </span>
           </div>
@@ -57,15 +57,15 @@ export default function Home() {
           {/* Top Right: Settings Gear */}
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="text-4xl text-white/80 hover:text-white transition-all transform hover:rotate-90"
+            className="text-4xl text-white hover:opacity-80 transition-all transform hover:rotate-90 mt-2"
           >
             ⚙️
           </button>
         </div>
 
         {/* Large Score in Center */}
-        <div className="flex justify-center mt-2">
-          <span className="text-[120px] font-bold text-white leading-none tracking-tight drop-shadow-md">
+        <div className="flex justify-center -mt-2">
+          <span className="text-[120px] font-bold text-white leading-none tracking-tight">
             {score}
           </span>
         </div>
@@ -78,8 +78,8 @@ export default function Home() {
         onReset={resetGame}
       />
 
-      {/* Game Board Container - Match image exactly */}
-      <div className={`relative p-[1px] rounded-[6px] bg-[#222222] shadow-[0_15px_45px_rgba(0,0,0,0.4)] z-10 transition-all border border-black/20`}>
+      {/* Game Board Container */}
+      <div className={`relative p-[1px] rounded-md bg-[#2b2b2b] shadow-2xl z-10 transition-all border border-black/30`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}

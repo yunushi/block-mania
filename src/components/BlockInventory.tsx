@@ -16,7 +16,7 @@ const BlockInventory: React.FC<BlockInventoryProps> = ({ blocks, onPlace }) => {
         {[0, 1, 2].map((index) => (
           <div 
             key={index} 
-            className="flex-1 flex justify-center items-center aspect-square rounded-lg bg-[#262626] border-2 border-[#323232] shadow-md transition-all relative"
+            className="flex-1 flex justify-center items-center aspect-square rounded-sm bg-[#262626] border-2 border-[#323232] shadow-lg transition-all relative"
           >
             {blocks[index] ? (
               <div className="relative flex justify-center items-center w-full h-full transform hover:scale-110 active:scale-95 transition-all duration-300">
