@@ -357,11 +357,13 @@ export const useGameLogic = () => {
         }
         setGrid(finalGrid);
         setScore(prev => prev + placementScore + Math.floor((clearedLines * 400) * (1 + (newCombo * 0.5))));
-        generateInventory(blockIndex);
-        if (checkGameOver(finalGrid, updatedInv.map((b, i) => i === blockIndex ? null : b))) { // Check with the used slot empty
-           // Actually generateInventory is async in effect, but here we just need to know if game is over with whatever is left
+        
+        const isAllEmpty = updatedInv.every(b => b === null);
+        if (isAllEmpty) {
+          generateInventory();
         }
-        // Check game over AFTER refill
+
+        // Check game over
         setTimeout(() => {
           setInventory(prev => {
             if (checkGameOver(finalGrid, prev)) { setGameOver(true); setGameStatus('gameOver'); }
@@ -379,7 +381,12 @@ export const useGameLogic = () => {
       setInventory(updatedInv);
       setGrid(newGrid);
       setScore(prev => prev + placementScore);
-      generateInventory(blockIndex);
+
+      const isAllEmpty = updatedInv.every(b => b === null);
+      if (isAllEmpty) {
+        generateInventory();
+      }
+
       setTimeout(() => {
         setInventory(prev => {
           if (checkGameOver(newGrid, prev)) { setGameOver(true); setGameStatus('gameOver'); }

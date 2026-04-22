@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc; /* Light Grey/White */
-  --foreground: #334155;
-  --grid-bg: #1e293b; /* Dark Grey */
-  --cell-bg: rgba(30, 41, 59, 0.1);
-  --accent: #ec4899; /* Pink */
+  --background: #a1a1a1; /* Solid Grey from image */
+  --foreground: #ffffff;
+  --grid-bg: #323232; /* Darker Grey for grid */
+  --cell-bg: rgba(0, 0, 0, 0.2);
+  --accent: #fb7185; /* Pink */
   --cell-size: 44px;
 }
 
@@ -40,43 +40,41 @@ body {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
-/* 3D Glossy Block Style */
+/* Beveled Block Style from Image */
 .cell-cube {
   width: 100%;
   height: 100%;
-  border-radius: 10px; /* Rounded corners */
+  border-radius: 4px; /* Less rounded, more square-ish as seen in image */
   position: relative;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* 3D Lighting Effects - More pronounced */
-  box-shadow: 
-    inset 0 3px 6px rgba(255, 255, 255, 0.8), /* Stronger Inner light */
-    inset 0 -5px 10px rgba(0, 0, 0, 0.15),     /* Soft bottom base */
-    0 8px 16px -4px rgba(0, 0, 0, 0.15);      /* Soft drop shadow */
-    
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  overflow: hidden;
+  /* Beveled edges */
+  border-top: 4px solid rgba(255, 255, 255, 0.6);
+  border-left: 4px solid rgba(255, 255, 255, 0.4);
+  border-right: 4px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 4px solid rgba(0, 0, 0, 0.3);
+  
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Glossy highlight layer */
-.cell-cube::before {
+.cell-cube::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
-  border-radius: 10px 10px 0 0;
+  inset: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   pointer-events: none;
 }
 
-/* PASTEL PALETTE */
-.cell-color-1 { background: linear-gradient(145deg, #fce7f3, #fbcfe8); } /* Baby Pink */
-.cell-color-2 { background: linear-gradient(145deg, #dbeafe, #bfdbfe); } /* Baby Blue */
-.cell-color-3 { background: linear-gradient(145deg, #f8fafc, #f1f5f9); } /* Soft White/Grey */
-.cell-color-4 { background: linear-gradient(145deg, #fee2e2, #fecaca); } /* Soft Red/Pink */
-.cell-color-5 { background: linear-gradient(145deg, #ecfdf5, #d1fae5); } /* Soft Green */
+/* Remove previous glossy layer */
+.cell-cube::before {
+  display: none;
+}
+
+/* EXACT COLORS FROM IMAGE */
+.cell-color-1 { background: #f4a5ae; } /* Pink */
+.cell-color-2 { background: #8cd4f5; } /* Blue */
+.cell-color-3 { background: #e2e8f0; } /* White/Grey */
+.cell-color-4 { background: #f4a5ae; } 
+.cell-color-5 { background: #8cd4f5; }
 
 /* Animations */
 @keyframes bounce-in {
@@ -100,18 +98,15 @@ body {
 
 /* Grid Cell Styles */
 .grid-cell {
-  background: rgba(30, 41, 59, 0.4); /* Darker base for cell holes */
-  border-radius: 8px;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: #2a2a2a; /* Flat Dark Grey */
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .inventory-panel {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(24px);
-  border-top: 2px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.08);
-  border-radius: 40px 40px 0 0;
+  background: rgba(161, 161, 161, 0.9); /* Same as background but with blur */
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .rainbow-unified-overlay {

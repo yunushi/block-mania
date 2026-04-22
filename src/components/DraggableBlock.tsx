@@ -94,31 +94,13 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
     setIsDragging(true);
 
     handleMove.current = (moveEvent: PointerEvent) => {
-      const DRAG_Y_OFFSET = -80; // Render block 80px above finger for better visibility
+      const DRAG_Y_OFFSET = -80; // Render block 80px above finger
       const rawX = moveEvent.clientX - startPos.current.x;
       const rawY = moveEvent.clientY - startPos.current.y + DRAG_Y_OFFSET;
       
-      const currentCenterX = startCenterRef.current.x + rawX;
-      const currentCenterY = startCenterRef.current.y + rawY;
-      const topLeftX = currentCenterX - blockWidthFull / 2;
-      const topLeftY = currentCenterY - blockHeightFull / 2;
-
-      // Check where our anchor cell would be
-      const checkX = topLeftX + blockAnchorsRef.current.c * (cellSize + GRID_GAP) + cellSize / 2;
-      const checkY = topLeftY + blockAnchorsRef.current.r * (cellSize + GRID_GAP) + cellSize / 2;
-      
-      const cell = findNearestCell(checkX, checkY);
-
-      if (cell && blockRef.current) {
-        // SNAP: Jump the block to the grid cell
-        const snapX = rawX + (cell.x - checkX);
-        const snapY = rawY + (cell.y - checkY);
-        
-        blockRef.current.style.transform = `translate3d(${snapX}px, ${snapY}px, 0) scale(1.15)`;
-        dragOffsetRef.current = { x: snapX, y: snapY };
-      } else if (blockRef.current) {
-        // Smooth follow when not over grid (with Y offset)
-        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.1)`;
+      // FLUID DRAG: Always follow finger smoothly
+      if (blockRef.current) {
+        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.15)`;
         dragOffsetRef.current = { x: rawX, y: rawY };
       }
       latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };

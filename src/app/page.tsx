@@ -43,24 +43,31 @@ export default function Home() {
     <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[var(--background)]`}>
 
 
-      {/* Settings Button */}
-      <button
-        onClick={() => setIsSettingsOpen(true)}
-        className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl glass transition-all hover:rotate-90 z-[60]"
-      >
-        <span className="text-2xl">⚙️</span>
-      </button>
-
-      {/* Header / Score */}
-      <div className="flex flex-col items-center gap-1 sm:gap-2 z-10 mt-safe pt-2">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-800 drop-shadow-sm italic">
-          BLOCK <span className="text-pink-500">BLAST</span>
-        </h1>
-        <div className="flex gap-4">
-          <div className="px-6 py-2 sm:px-8 sm:py-3 bg-white/5 rounded-full glass border border-white/10 shadow-xl flex items-baseline gap-2">
-            <span className="text-base sm:text-xl font-bold text-slate-500">SCORE: </span>
-            <span className="text-2xl sm:text-3xl font-black text-slate-800 tabular-nums tracking-tight">{score}</span>
+      {/* HEADER Layout from Image */}
+      <div className="w-full max-w-lg flex flex-col gap-4 px-6 pt-4 z-20">
+        <div className="flex justify-between items-center">
+          {/* Top Left: Crown + High Score */}
+          <div className="flex items-center gap-2">
+            <span className="text-4xl filter drop-shadow-md">👑</span>
+            <span className="text-4xl font-black text-[#fbbf24] drop-shadow-md tracking-tighter">
+              {highScore}
+            </span>
           </div>
+          
+          {/* Top Right: Settings Gear */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="text-4xl text-white/80 hover:text-white transition-all transform hover:rotate-90"
+          >
+            ⚙️
+          </button>
+        </div>
+
+        {/* Large Score in Center */}
+        <div className="flex justify-center mt-4">
+          <span className="text-[100px] font-black text-white leading-none tracking-tighter drop-shadow-lg">
+            {score}
+          </span>
         </div>
       </div>
 
@@ -72,7 +79,7 @@ export default function Home() {
       />
 
       {/* Game Board Container - Sharpened UI separation */}
-      <div className={`relative p-3 sm:p-4 rounded-[3rem] bg-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] z-10 transition-all border border-slate-100`}>
+      <div className={`relative p-2 rounded-[0.5rem] bg-[#5a5a5a] shadow-[0_10px_30px_rgba(0,0,0,0.4)] z-10 transition-all border border-white/10`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
