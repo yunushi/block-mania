@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Grid, Block, Position, Cell } from '@/types/game';
+import { useState, useCallback } from 'react';
+import { Grid, Block, Position } from '@/types/game';
 
 const GRID_SIZE = 8;
 
@@ -140,19 +140,15 @@ export const useGameLogic = () => {
   }, []);
 
   const getHelpfulShapes = useCallback((currentGrid: Grid) => {
-    const helpfulIndices: number[] = [];
     const lineCompletingIndices: number[] = [];
     
     ALL_SHAPES.forEach((shape, index) => {
-      let isHelpful = false;
       let completesLine = false;
 
       for (let r = 0; r <= GRID_SIZE - shape.length; r++) {
         for (let c = 0; c <= GRID_SIZE - shape[0].length; c++) {
           const mockBlock = { shape } as Block;
           if (canPlaceBlock(currentGrid, mockBlock, { row: r, col: c })) {
-            isHelpful = true;
-            
             const tempGrid = currentGrid.map(row => [...row]);
             for (let sr = 0; sr < shape.length; sr++) {
               for (let sc = 0; sc < shape[sr].length; sc++) {
@@ -173,16 +169,15 @@ export const useGameLogic = () => {
         if (completesLine) break;
       }
       
-      if (isHelpful) helpfulIndices.push(index);
       if (completesLine) lineCompletingIndices.push(index);
     });
     
-    return { helpfulIndices, lineCompletingIndices };
+    return { lineCompletingIndices };
   }, [canPlaceBlock]);
 
   const generateInventory = useCallback(() => {
     const newInventory: (Block | null)[] = [null, null, null];
-    const { helpfulIndices, lineCompletingIndices } = getHelpfulShapes(grid);
+    const { lineCompletingIndices } = getHelpfulShapes(grid);
     const availableColors = SKIN_ASSETS[currentSkin];
 
     let activeShapePool: number[][][];
@@ -310,11 +305,7 @@ export const useGameLogic = () => {
     setGameStatus('playing');
   }, [grid, inventory, resetGame, gameOver]);
 
-  const updatePreview = useCallback((blockId: string, row: number, col: number) => {
-    // Deprecated for raw mobile performance
-  }, []);
 
-  const clearPreview = useCallback(() => {}, []);
 
   const checkGameOver = useCallback((currentGrid: Grid, currentInv: (Block | null)[]) => {
     const activeBlocks = currentInv.filter((b): b is Block => b !== null);
@@ -332,7 +323,6 @@ export const useGameLogic = () => {
     if (blockIndex === -1) return false;
     const block = inventory[blockIndex]!;
     if (!canPlaceBlock(grid, block, { row, col })) return false;
-    clearPreview();
     playSound('place');
     const newGrid = grid.map(r => [...r]);
     let cellsPlaced = 0;
@@ -378,7 +368,7 @@ export const useGameLogic = () => {
         if (newCombo >= 8) { sText = 'GODLIKE'; sType = 'godlike'; }
         
         setComboShoutout({ text: sText, type: sType });
-        playSound(sType as any);
+        playSound(sType as keyof typeof AUDIO_URLS);
         setTimeout(() => setComboShoutout(null), 2000);
       }
 
@@ -410,14 +400,14 @@ export const useGameLogic = () => {
       else if (checkGameOver(newGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
     }
     return true;
-  }, [grid, inventory, comboCount, comboGrace, canPlaceBlock, generateInventory, checkGameOver, clearPreview, playSound]);
+  }, [grid, inventory, comboCount, comboGrace, canPlaceBlock, generateInventory, checkGameOver, playSound]);
 
   const goToMenu = useCallback(() => setGameStatus('menu'), []);
 
   return {
     grid, score, inventory, gameOver, gameStatus, setGameStatus,
     comboCount, showCombo, showPerfect, comboShoutout, isMuted, toggleMute,
-    currentSkin, changeSkin, placeBlock, updatePreview,
-    clearPreview, resetGame, startGame, goToMenu, cycleSkin
+    currentSkin, changeSkin, placeBlock, 
+    resetGame, startGame, goToMenu, cycleSkin
   };
 };

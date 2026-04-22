@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Grid } from '@/types/game';
+import { getColorClass } from '@/utils/gameUtils';
 
 interface GameBoardProps {
   grid: Grid;
@@ -10,18 +11,7 @@ interface GameBoardProps {
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ grid, showPerfect }) => {
-  const getColorClass = (image: string | null) => {
-    if (!image) return '';
-    const legacyMap: Record<string, string> = {
-      'red': 'color-1',
-      'blue': 'color-2',
-      'green': 'color-3',
-      'yellow': 'color-4',
-      'purple': 'color-5'
-    };
-    const key = (image && legacyMap[image]) ? legacyMap[image] : image;
-    return `cell-${key}`;
-  };
+
 
   return (
     <div className="grid grid-cols-8 gap-1 p-[6px] bg-[#0c1322] rounded-[1rem] border-[4px] border-[#1e293b] shadow-[inset_0_4px_20px_rgba(0,0,0,0.8),0_20px_40px_-10px_rgba(0,0,0,0.9)] relative overflow-hidden">

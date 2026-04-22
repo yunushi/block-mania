@@ -11,9 +11,8 @@ export default function Home() {
   const {
     grid, score, inventory, gameOver,
     comboCount, showCombo, showPerfect, comboShoutout,
-    isMuted, toggleMute,
-    gameStatus, setGameStatus,
-    placeBlock, updatePreview, clearPreview, resetGame, startGame, goToMenu
+    gameStatus,
+    placeBlock, resetGame, startGame, goToMenu
   } = useGameLogic();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -25,13 +24,14 @@ export default function Home() {
     if (saved) setHighScore(parseInt(saved));
   }, []);
 
-  // Save new high score
+  // Save new high score only when it truly changes
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
       localStorage.setItem('block_blast_highscore', score.toString());
     }
-  }, [score, highScore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [score]);
 
   const hasActiveGame = score > 0 && !gameOver;
 
