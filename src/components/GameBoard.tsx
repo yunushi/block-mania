@@ -14,7 +14,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ grid, showPerfect }) => {
 
 
   return (
-    <div className="grid grid-cols-8 gap-0 p-[1px] bg-[#323232] rounded-[4px] relative overflow-hidden">
+    <div className="grid grid-cols-8 gap-[1px] p-[1px] bg-[#323232] rounded-[4px] relative overflow-hidden">
       {/* Single unified rainbow overlay — one continuous gradient across the full grid */}
       {showPerfect && (
         <div className="rainbow-unified-overlay" />
