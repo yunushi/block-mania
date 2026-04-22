@@ -11,22 +11,23 @@ interface BlockInventoryProps {
 
 const BlockInventory: React.FC<BlockInventoryProps> = ({ blocks, onPlace }) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 inventory-panel px-6 pt-10 pb-12 flex justify-center items-center">
-      <div className="flex justify-between items-center gap-6 w-full max-w-lg">
+    <div className="w-full z-50 flex justify-center items-center">
+      {/* Unified 3D Darkened Panel */}
+      <div className="w-full max-w-lg bg-[#2a2a2a] rounded-2xl p-6 shadow-[inset_0_4px_12px_rgba(0,0,0,0.6),0_1px_1px_rgba(255,255,255,0.1)] border border-black/40 flex justify-between items-center gap-4">
         {[0, 1, 2].map((index) => (
           <div 
             key={index} 
-            className="flex-1 flex justify-center items-center aspect-square rounded-sm bg-[#262626] border-2 border-[#323232] shadow-lg transition-all relative"
+            className="flex-1 flex justify-center items-center min-h-[120px] relative"
           >
             {blocks[index] ? (
-              <div className="relative flex justify-center items-center w-full h-full transform hover:scale-110 active:scale-95 transition-all duration-300">
+              <div className="relative flex justify-center items-center w-full h-full transform hover:scale-105 active:scale-95 transition-all duration-300">
                 <DraggableBlock 
                   block={blocks[index]!} 
                   onPlace={onPlace} 
                 />
               </div>
             ) : (
-              <div className="w-6 h-6 rounded-full bg-slate-200/50 blur-[2px]" />
+              <div className="w-2 h-2 rounded-full bg-black/20" />
             )}
           </div>
         ))}

@@ -40,7 +40,7 @@ export default function Home() {
   }
 
   return (
-    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-4 select-none overflow-hidden relative bg-[#9d9d9d]`}>
+    <main className="flex flex-col items-center h-[100dvh] p-4 select-none overflow-hidden relative bg-[#9d9d9d]">
 
 
       {/* HEADER Layout from Image */}
@@ -134,8 +134,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Controller / Inventory - Floating Desk Style */}
-      <div className={`w-full flex justify-center relative z-30 mt-4 mb-2`}>
+      {/* Controller / Inventory - Positioned relative instead of fixed to avoid overlap */}
+      <div className="w-full max-w-lg mt-auto mb-8 z-30">
         <BlockInventory
           blocks={inventory}
           onPlace={placeBlock}
