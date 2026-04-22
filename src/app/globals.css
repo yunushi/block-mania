@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #a1a1a1; /* Solid Grey from image */
+  --background: #a1a1a1; 
   --foreground: #ffffff;
-  --grid-bg: #323232; /* Darker Grey for grid */
-  --cell-bg: rgba(0, 0, 0, 0.2);
-  --accent: #fb7185; /* Pink */
+  --grid-bg: #323232; 
+  --cell-bg: #2a2a2a;
+  --accent: #f49ca5; /* Exact Pink */
   --cell-size: 44px;
 }
 
@@ -40,27 +40,27 @@ body {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
-/* Beveled Block Style from Image */
+/* Hyper-Accurate Beveled Block Style */
 .cell-cube {
   width: 100%;
   height: 100%;
-  border-radius: 4px; /* Less rounded, more square-ish as seen in image */
+  border-radius: 2px; /* Very sharp as in image */
   position: relative;
   
-  /* Beveled edges */
-  border-top: 4px solid rgba(255, 255, 255, 0.6);
-  border-left: 4px solid rgba(255, 255, 255, 0.4);
-  border-right: 4px solid rgba(0, 0, 0, 0.2);
-  border-bottom: 4px solid rgba(0, 0, 0, 0.3);
+  /* Sharp Bevel edges */
+  border-top: 5px solid rgba(255, 255, 255, 0.8);
+  border-left: 5px solid rgba(255, 255, 255, 0.5);
+  border-right: 5px solid rgba(0, 0, 0, 0.3);
+  border-bottom: 5px solid rgba(0, 0, 0, 0.4);
   
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .cell-cube::after {
   content: '';
   position: absolute;
   inset: 0;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   pointer-events: none;
 }
 
@@ -69,12 +69,12 @@ body {
   display: none;
 }
 
-/* EXACT COLORS FROM IMAGE */
-.cell-color-1 { background: #f4a5ae; } /* Pink */
-.cell-color-2 { background: #8cd4f5; } /* Blue */
+/* EXACT COLORS SAMPLED FROM IMAGE */
+.cell-color-1 { background: #f49ca5; } /* Pink */
+.cell-color-2 { background: #89d1f3; } /* Blue */
 .cell-color-3 { background: #e2e8f0; } /* White/Grey */
-.cell-color-4 { background: #f4a5ae; } 
-.cell-color-5 { background: #8cd4f5; }
+.cell-color-4 { background: #f49ca5; } 
+.cell-color-5 { background: #89d1f3; }
 
 /* Animations */
 @keyframes bounce-in {
@@ -98,8 +98,8 @@ body {
 
 /* Grid Cell Styles */
 .grid-cell {
-  background: #2a2a2a; /* Flat Dark Grey */
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: #3a3a3a; /* Match image grid color */
+  border: 0.5px solid rgba(255, 255, 255, 0.05);
 }
 
 .inventory-panel {

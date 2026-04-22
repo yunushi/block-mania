@@ -64,8 +64,8 @@ export default function Home() {
         </div>
 
         {/* Large Score in Center */}
-        <div className="flex justify-center mt-4">
-          <span className="text-[100px] font-black text-white leading-none tracking-tighter drop-shadow-lg">
+        <div className="flex justify-center mt-2">
+          <span className="text-[120px] font-bold text-white leading-none tracking-tight drop-shadow-md">
             {score}
           </span>
         </div>
@@ -78,8 +78,8 @@ export default function Home() {
         onReset={resetGame}
       />
 
-      {/* Game Board Container - Sharpened UI separation */}
-      <div className={`relative p-2 rounded-[0.5rem] bg-[#5a5a5a] shadow-[0_10px_30px_rgba(0,0,0,0.4)] z-10 transition-all border border-white/10`}>
+      {/* Game Board Container */}
+      <div className={`relative p-[6px] rounded-xl bg-[#4a4a4a] shadow-[0_15px_40px_rgba(0,0,0,0.5)] z-10 transition-all border border-white/5`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
