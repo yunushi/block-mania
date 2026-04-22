@@ -78,8 +78,8 @@ export default function Home() {
         onReset={resetGame}
       />
 
-      {/* Game Board Container */}
-      <div className={`relative p-[6px] rounded-xl bg-[#4a4a4a] shadow-[0_15px_40px_rgba(0,0,0,0.5)] z-10 transition-all border border-white/5`}>
+      {/* Game Board Container - Match image exactly */}
+      <div className={`relative p-[1px] rounded-[6px] bg-[#222222] shadow-[0_15px_45px_rgba(0,0,0,0.4)] z-10 transition-all border border-black/20`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
