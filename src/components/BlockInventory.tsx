@@ -11,24 +11,26 @@ interface BlockInventoryProps {
 
 const BlockInventory: React.FC<BlockInventoryProps> = ({ blocks, onPlace }) => {
   return (
-    <div className="flex justify-center items-center w-full max-w-2xl h-32 sm:h-40 md:h-48 bg-slate-900/60 rounded-2xl md:rounded-3xl glass p-2 sm:p-6 gap-2 sm:gap-4 border border-white/10 shadow-2xl max-w-[95vw]">
-      {[0, 1, 2].map((index) => (
-        <div 
-          key={index} 
-          className="flex justify-center items-center flex-1 max-w-[150px] aspect-square h-auto border border-white/5 rounded-xl sm:rounded-2xl bg-white/5"
-        >
-          {blocks[index] && (
-            <div className="relative flex justify-center items-center w-full h-full transform scale-90 md:scale-100 hover:scale-110 transition-transform">
-              <div className="absolute flex justify-center items-center">
+    <div className="fixed bottom-0 left-0 right-0 z-50 inventory-panel px-6 pt-10 pb-12 flex justify-center items-center">
+      <div className="flex justify-between items-center gap-6 w-full max-w-lg">
+        {[0, 1, 2].map((index) => (
+          <div 
+            key={index} 
+            className="flex-1 flex justify-center items-center aspect-square rounded-3xl bg-slate-100/50 border-2 border-white/80 shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] transition-all relative"
+          >
+            {blocks[index] ? (
+              <div className="relative flex justify-center items-center w-full h-full transform hover:scale-110 active:scale-95 transition-all duration-300">
                 <DraggableBlock 
                   block={blocks[index]!} 
                   onPlace={onPlace} 
                 />
               </div>
-            </div>
-          )}
-        </div>
-      ))}
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-slate-200/50 blur-[2px]" />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

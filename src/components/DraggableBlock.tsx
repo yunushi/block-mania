@@ -17,6 +17,7 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
   const startCenterRef = useRef({ x: 0, y: 0 });
   const gridCellsRef = useRef<{ row: number, col: number, x: number, y: number }[]>([]);
   const latestPointerRef = useRef({ x: 0, y: 0 });
+  const blockAnchorsRef = useRef({ r: 0, c: 0 }); // Cache the anchor of the block's first solid cell
 
   // Sync cell size to CSS breakpoints for accurate pointer math
   const [cellSize, setCellSize] = useState(44);
@@ -78,17 +79,49 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
     dragOffsetRef.current = { x: 0, y: 0 };
     latestPointerRef.current = { x: e.clientX, y: e.clientY };
 
+    // Calculate the anchor (first solid cell) once per drag
+    let firstR = 0; let firstC = 0;
+    for (let r = 0; r < rows; r++) {
+      let found = false;
+      for (let c = 0; c < columns; c++) {
+        if (block.shape[r][c] === 1) { firstR = r; firstC = c; found = true; break; }
+      }
+      if (found) break;
+    }
+    blockAnchorsRef.current = { r: firstR, c: firstC };
+
     if (blockRef.current) blockRef.current.style.transition = 'none';
     setIsDragging(true);
 
     handleMove.current = (moveEvent: PointerEvent) => {
-      const newX = moveEvent.clientX - startPos.current.x;
-      const newY = moveEvent.clientY - startPos.current.y;
-      dragOffsetRef.current = { x: newX, y: newY };
-      latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
-      if (blockRef.current) {
-        blockRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0) scale(1)`;
+      const DRAG_Y_OFFSET = -80; // Render block 80px above finger for better visibility
+      const rawX = moveEvent.clientX - startPos.current.x;
+      const rawY = moveEvent.clientY - startPos.current.y + DRAG_Y_OFFSET;
+      
+      const currentCenterX = startCenterRef.current.x + rawX;
+      const currentCenterY = startCenterRef.current.y + rawY;
+      const topLeftX = currentCenterX - blockWidthFull / 2;
+      const topLeftY = currentCenterY - blockHeightFull / 2;
+
+      // Check where our anchor cell would be
+      const checkX = topLeftX + blockAnchorsRef.current.c * (cellSize + GRID_GAP) + cellSize / 2;
+      const checkY = topLeftY + blockAnchorsRef.current.r * (cellSize + GRID_GAP) + cellSize / 2;
+      
+      const cell = findNearestCell(checkX, checkY);
+
+      if (cell && blockRef.current) {
+        // SNAP: Jump the block to the grid cell
+        const snapX = rawX + (cell.x - checkX);
+        const snapY = rawY + (cell.y - checkY);
+        
+        blockRef.current.style.transform = `translate3d(${snapX}px, ${snapY}px, 0) scale(1.15)`;
+        dragOffsetRef.current = { x: snapX, y: snapY };
+      } else if (blockRef.current) {
+        // Smooth follow when not over grid (with Y offset)
+        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.1)`;
+        dragOffsetRef.current = { x: rawX, y: rawY };
       }
+      latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
     };
 
     handleUp.current = () => {
@@ -107,27 +140,17 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
       const topLeftX = currentCenterX - blockWidthFull / 2;
       const topLeftY = currentCenterY - blockHeightFull / 2;
 
-      let firstSolidR = 0, firstSolidC = 0;
-      for (let r = 0; r < rows; r++) {
-        let found = false;
-        for (let c = 0; c < columns; c++) {
-          if (block.shape[r][c] === 1) {
-            firstSolidR = r; firstSolidC = c; found = true; break;
-          }
-        }
-        if (found) break;
-      }
-
-      const checkX = topLeftX + firstSolidC * (cellSize + GRID_GAP) + cellSize / 2;
-      const checkY = topLeftY + firstSolidR * (cellSize + GRID_GAP) + cellSize / 2;
+      const checkX = topLeftX + blockAnchorsRef.current.c * (cellSize + GRID_GAP) + cellSize / 2;
+      const checkY = topLeftY + blockAnchorsRef.current.r * (cellSize + GRID_GAP) + cellSize / 2;
+      
       const cell = findNearestCell(checkX, checkY);
 
       if (cell) {
-        onPlace(block.id, cell.row - firstSolidR, cell.col - firstSolidC);
+        onPlace(block.id, cell.row - blockAnchorsRef.current.r, cell.col - blockAnchorsRef.current.c);
       }
 
       if (blockRef.current) {
-        blockRef.current.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        blockRef.current.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         blockRef.current.style.transform = `translate3d(0px, 0px, 0) scale(${invScale})`;
       }
       dragOffsetRef.current = { x: 0, y: 0 };

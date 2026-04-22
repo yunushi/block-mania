@@ -175,98 +175,72 @@ export const useGameLogic = () => {
     return { lineCompletingIndices };
   }, [canPlaceBlock]);
 
-  const generateInventory = useCallback(() => {
-    const newInventory: (Block | null)[] = [null, null, null];
+  const generateInventory = useCallback((specificIndex?: number) => {
+    const newInventory = [...inventory];
     const { lineCompletingIndices } = getHelpfulShapes(grid);
     const availableColors = SKIN_ASSETS[currentSkin];
-
-    let activeShapePool: number[][][];
-    if (score < 8000) activeShapePool = SHAPES_TIERS.easy;
-    else if (score < 16000) activeShapePool = [...SHAPES_TIERS.easy, ...SHAPES_TIERS.medium];
-    else activeShapePool = ALL_SHAPES;
-
-    let spawnedHelpfulCount = 0;
-    const spawnedShapes = new Map<string, number>();
-    let spawned3x3 = false;
     
-    for (let i = 0; i < 3; i++) {
+    const indicesToFill = specificIndex !== undefined ? [specificIndex] : [0, 1, 2];
+    
+    // Track shapes spawned IN THIS CALL to prevent immediate duplicates
+    const spawnedShapesInBatch = new Map<string, number>();
+    let spawned3x3InBatch = false;
+
+    for (const idx of indicesToFill) {
+        if (newInventory[idx] !== null && specificIndex === undefined) continue;
+
         let shape: number[][] | null = null;
+        let spawnedHelpfulCount = 0;
         
+        let activeShapePool: number[][][];
+        if (score < 8000) activeShapePool = SHAPES_TIERS.easy;
+        else if (score < 16000) activeShapePool = [...SHAPES_TIERS.easy, ...SHAPES_TIERS.medium];
+        else activeShapePool = ALL_SHAPES;
+
         let helpProbability = 0;
         if (score < 5000) helpProbability = 1.0;
         else if (score < 15000) helpProbability = 0.5;
         else if (score < 30000) helpProbability = 0.2;
         
-        // Provide early-game massive assistance 
         if (lineCompletingIndices.length > 0 && Math.random() < helpProbability && spawnedHelpfulCount < 1) { 
-          // Filter out diagonal shapes AND 3x3 if already spawned
-          const filteredLineCompleters = lineCompletingIndices.filter(idx => {
-            if (DIAGONAL_INDICES.includes(idx)) return false;
-            if (idx === 35 && spawned3x3) return false;
-            const strShape = JSON.stringify(ALL_SHAPES[idx]);
-            if ((spawnedShapes.get(strShape) || 0) >= 2) return false;
-            if (spawnedShapes.has(strShape) && Math.random() < 0.7) return false;
+          const filteredLineCompleters = lineCompletingIndices.filter(lIdx => {
+            if (DIAGONAL_INDICES.includes(lIdx)) return false;
+            if (lIdx === 35 && spawned3x3InBatch) return false;
+            const strShape = JSON.stringify(ALL_SHAPES[lIdx]);
+            if ((spawnedShapesInBatch.get(strShape) || 0) >= 2) return false;
             return true;
           });
           
-          const targetIndices = (filteredLineCompleters.length > 0) 
-            ? filteredLineCompleters 
-            : lineCompletingIndices.filter(idx => !(idx === 35 && spawned3x3)); // At least prevent 3x3 double
-          if (targetIndices.length === 0) {
-              shape = ALL_SHAPES[lineCompletingIndices[Math.floor(Math.random() * lineCompletingIndices.length)]];
-            } else {
-              shape = ALL_SHAPES[targetIndices[Math.floor(Math.random() * targetIndices.length)]];
-            }
-            spawnedHelpfulCount++;
+          const targetIndices = (filteredLineCompleters.length > 0) ? filteredLineCompleters : lineCompletingIndices;
+          shape = ALL_SHAPES[targetIndices[Math.floor(Math.random() * targetIndices.length)]];
+          spawnedHelpfulCount++;
         } else {
-          const filteredPool = activeShapePool.filter((s) => {
-            const index = ALL_SHAPES.indexOf(s);
-            
-            // Early game spawns 1x1 pieces incredibly often to act as jokers
-            if (index === 0 && score < 10000) return Math.random() < 0.6;
-            else if (index === 0) return Math.random() < 0.15;
-            
-            // Dynamic rarity for 3x3 (Index 35) - gets rarer as score increases
-            if (index === 35) {
-              if (spawned3x3) return false; // LIMIT: Only one 3x3 per wave
-              const rarityWeight = Math.max(0.05, 1.0 - (score / 30000));
-              return Math.random() < rarityWeight;
-            }
-            // Even rarer base spawn for diagonals
-            if (DIAGONAL_INDICES.includes(index)) return Math.random() < 0.05; 
-            
-            // Mega L shape rarity
-            if (MEGA_L_INDICES.includes(index)) return Math.random() < 0.05; 
-            
-            // Strictly prevent 3 of the same block
+          const pool = activeShapePool.filter((s) => {
+            const poolIdx = ALL_SHAPES.indexOf(s);
+            if (poolIdx === 35 && spawned3x3InBatch) return false;
             const strShape = JSON.stringify(s);
-            if ((spawnedShapes.get(strShape) || 0) >= 2) return false;
-            
-            // Prevent duplicate block spam in same wave
-            if (spawnedShapes.has(strShape) && Math.random() < 0.7) return false;
-            
+            if ((spawnedShapesInBatch.get(strShape) || 0) >= 2) return false;
             return true;
           });
-          const pool = filteredPool.length > 0 ? filteredPool : activeShapePool;
           shape = pool[Math.floor(Math.random() * pool.length)];
         }
         
         if (shape) {
            const strShape = JSON.stringify(shape);
-           spawnedShapes.set(strShape, (spawnedShapes.get(strShape) || 0) + 1);
+           spawnedShapesInBatch.set(strShape, (spawnedShapesInBatch.get(strShape) || 0) + 1);
+           if (ALL_SHAPES.indexOf(shape) === 35) spawned3x3InBatch = true;
+           
+           const color = availableColors[Math.floor(Math.random() * availableColors.length)];
+           newInventory[idx] = {
+             id: Math.random().toString(36).substr(2, 9),
+             shape,
+             image: color,
+             size: Math.max(shape.length, shape[0].length),
+           };
         }
-        if (ALL_SHAPES.indexOf(shape) === 35) spawned3x3 = true;
-        
-        const color = availableColors[Math.floor(Math.random() * availableColors.length)];
-        newInventory[i] = {
-          id: Math.random().toString(36).substr(2, 9),
-          shape,
-          image: color,
-          size: Math.max(shape.length, shape[0].length),
-        };
     }
     setInventory(newInventory);
-  }, [grid, score, getHelpfulShapes, currentSkin]);
+  }, [grid, score, getHelpfulShapes, currentSkin, inventory]);
 
   const resetGame = useCallback(() => {
     setGrid(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
@@ -383,8 +357,17 @@ export const useGameLogic = () => {
         }
         setGrid(finalGrid);
         setScore(prev => prev + placementScore + Math.floor((clearedLines * 400) * (1 + (newCombo * 0.5))));
-        if (updatedInv.every(b => b === null)) generateInventory();
-        else if (checkGameOver(finalGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
+        generateInventory(blockIndex);
+        if (checkGameOver(finalGrid, updatedInv.map((b, i) => i === blockIndex ? null : b))) { // Check with the used slot empty
+           // Actually generateInventory is async in effect, but here we just need to know if game is over with whatever is left
+        }
+        // Check game over AFTER refill
+        setTimeout(() => {
+          setInventory(prev => {
+            if (checkGameOver(finalGrid, prev)) { setGameOver(true); setGameStatus('gameOver'); }
+            return prev;
+          });
+        }, 100);
       }, 400);
     } else {
       const newGrace = comboGrace - 1;
@@ -396,8 +379,13 @@ export const useGameLogic = () => {
       setInventory(updatedInv);
       setGrid(newGrid);
       setScore(prev => prev + placementScore);
-      if (updatedInv.every(b => b === null)) generateInventory();
-      else if (checkGameOver(newGrid, updatedInv)) { setGameOver(true); setGameStatus('gameOver'); }
+      generateInventory(blockIndex);
+      setTimeout(() => {
+        setInventory(prev => {
+          if (checkGameOver(newGrid, prev)) { setGameOver(true); setGameStatus('gameOver'); }
+          return prev;
+        });
+      }, 100);
     }
     return true;
   }, [grid, inventory, comboCount, comboGrace, canPlaceBlock, generateInventory, checkGameOver, playSound]);

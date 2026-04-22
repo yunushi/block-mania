@@ -40,10 +40,8 @@ export default function Home() {
   }
 
   return (
-    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[#0f172a]`}>
-      {/* Background Decorative Elements - Static Colors as requested */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none bg-blue-500/10" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none bg-purple-500/10" />
+    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[var(--background)]`}>
+
 
       {/* Settings Button */}
       <button
@@ -55,13 +53,13 @@ export default function Home() {
 
       {/* Header / Score */}
       <div className="flex flex-col items-center gap-1 sm:gap-2 z-10 mt-safe pt-2">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] italic">
-          BLOCK <span className="text-blue-500">BLAST</span>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-800 drop-shadow-sm italic">
+          BLOCK <span className="text-pink-500">BLAST</span>
         </h1>
         <div className="flex gap-4">
           <div className="px-6 py-2 sm:px-8 sm:py-3 bg-white/5 rounded-full glass border border-white/10 shadow-xl flex items-baseline gap-2">
-            <span className="text-base sm:text-xl font-bold text-blue-400">SCORE: </span>
-            <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight">{score}</span>
+            <span className="text-base sm:text-xl font-bold text-slate-500">SCORE: </span>
+            <span className="text-2xl sm:text-3xl font-black text-slate-800 tabular-nums tracking-tight">{score}</span>
           </div>
         </div>
       </div>
@@ -74,7 +72,7 @@ export default function Home() {
       />
 
       {/* Game Board Container - Sharpened UI separation */}
-      <div className={`relative p-3 sm:p-4 rounded-[2.5rem] bg-slate-950/80 border-[3px] border-white/5 shadow-[0_0_80px_-15px_rgba(0,0,0,0.8)] z-10 transition-all`}>
+      <div className={`relative p-3 sm:p-4 rounded-[3rem] bg-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] z-10 transition-all border border-slate-100`}>
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
@@ -129,8 +127,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Controller / Inventory */}
-      <div className={`w-full flex justify-center relative z-30`}>
+      {/* Controller / Inventory - Floating Desk Style */}
+      <div className={`w-full flex justify-center relative z-30 mt-4 mb-2`}>
         <BlockInventory
           blocks={inventory}
           onPlace={placeBlock}

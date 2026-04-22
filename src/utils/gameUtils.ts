@@ -4,20 +4,20 @@
 
 /**
  * Maps image/color names to CSS class tokens.
- * Handles both legacy names and modern color-N tokens.
+ * In this version, we map them to the new Pastel 3D Palette:
+ * Pink, Blue, Soft White/Grey.
  */
 export const getColorClass = (image: string | null): string => {
   if (!image) return '';
   
-  // Map legacy names to generic color tokens if they appear
-  const legacyMap: Record<string, string> = {
-    'red': 'color-1',
-    'blue': 'color-2',
-    'green': 'color-3',
-    'yellow': 'color-4',
-    'purple': 'color-5'
+  const mapping: Record<string, string> = {
+    'color-1': 'color-1',
+    'color-2': 'color-2',
+    'color-3': 'color-3',
+    'color-4': 'color-4',
+    'color-5': 'color-5',
   };
   
-  const key = legacyMap[image] || image;
+  const key = mapping[image] || 'color-3';
   return `cell-${key}`;
 };
