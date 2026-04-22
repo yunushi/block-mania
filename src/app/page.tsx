@@ -40,7 +40,7 @@ export default function Home() {
   }
 
   return (
-    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-8 select-none overflow-hidden relative bg-[var(--background)]`}>
+    <main className={`flex flex-col items-center justify-center h-[100dvh] p-2 sm:p-4 gap-2 sm:gap-4 select-none overflow-hidden relative bg-[#9d9d9d]`}>
 
 
       {/* HEADER Layout from Image */}
@@ -49,7 +49,7 @@ export default function Home() {
           {/* Top Left: Crown + High Score */}
           <div className="flex items-center gap-1 mt-2">
             <span className="text-3xl filter drop-shadow-sm">👑</span>
-            <span className="text-3xl font-bold text-[#fbb034] tracking-tight">
+            <span className="text-3xl font-extrabold text-[#fbb034] tracking-tight">
               {highScore}
             </span>
           </div>
@@ -78,8 +78,8 @@ export default function Home() {
         onReset={resetGame}
       />
 
-      {/* Game Board Container */}
-      <div className={`relative p-[1px] rounded-md bg-[#2b2b2b] shadow-2xl z-10 transition-all border border-black/30`}>
+      {/* Game Board Frame - More beveled and exact */}
+      <div className="relative p-[10px] rounded-xl bg-[#323232] border-t-2 border-l-2 border-white/20 border-b-2 border-r-2 border-black/40 shadow-2xl z-10">
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
@@ -142,10 +142,7 @@ export default function Home() {
         />
       </div>
 
-      {/* Instructions */}
-      <p className="text-slate-500 text-sm font-medium opacity-60">
-        Drag pieces onto the grid to clear rows and columns
-      </p>
+      {/* Remove Instructions to keep it clean like the image */}
     </main>
   );
 }

@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #9d9d9d; /* Sampled exact grey */
+  --background: #9d9d9d; 
   --foreground: #ffffff;
   --grid-bg: #323232; 
-  --cell-bg: #262626; 
+  --cell-bg: #222222; /* Darker cells as in image */
   --accent: #f4a5ae;
-  --cell-size: 44px;
+  --cell-size: 46px; 
 }
 
 @media (max-width: 420px) {
@@ -121,7 +121,7 @@ body {
 .grid-cell {
   background: var(--cell-bg);
   border-radius: 1px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.5); /* Deeper concave shadow */
 }
 
 .inventory-panel {
