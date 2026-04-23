@@ -12,7 +12,8 @@ export default function Home() {
     grid, score, inventory, gameOver,
     comboCount, showCombo, showPerfect, comboShoutout,
     gameStatus,
-    placeBlock, resetGame, startGame, goToMenu
+    placeBlock, resetGame, startGame, goToMenu, updatePreview,
+    previewRows, previewCols, previewColor,
   } = useGameLogic();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -40,7 +41,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col items-center w-full h-[100dvh] select-none overflow-hidden relative bg-[#9d9d9d] pt-safe pb-safe">
+    <main className="flex flex-col items-center w-full h-[100dvh] select-none overflow-hidden relative bg-animated pt-safe pb-safe">
 
       {/* Combo Indicator - Moved to TOP center */}
       {showCombo && comboCount > 1 && (
@@ -63,9 +64,9 @@ export default function Home() {
       <div className="w-full ps-4 pe-4 max-w-lg flex flex-col gap-4 pt-4 z-20">
         <div className="flex justify-between items-start">
           {/* Top Left: Crown + High Score */}
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1 mt-2 pulse-score">
             <span className="text-3xl filter drop-shadow-sm mb-2">👑</span>
-            <span className="text-2xl font-medium text-[#fbb034] tracking-tight">
+            <span className="text-2xl font-medium text-[var(--accent-color)] tracking-tight">
               {highScore}
             </span>
           </div>
@@ -80,10 +81,10 @@ export default function Home() {
         </div>
 
         {/* Large Score in Center */}
-        <div className="flex justify-center -mt-2 mb-4">
-          <span className="text-[80px] font-bold text-white leading-none tracking-tight">
+        <div className="text-center drop-shadow-lg pulse-score">
+          <div className="text-6xl font-bold text-white tabular-nums tracking-tighter">
             {score}
-          </span>
+          </div>
         </div>
       </div>
 
@@ -95,11 +96,14 @@ export default function Home() {
       />
 
       {/* Game Board Frame - More beveled and exact */}
-      <div className="relative p-[10px] rounded-xl bg-[#323232] border-t-2 border-l-2 border-white/20 border-b-2 border-r-2 border-black/40 shadow-2xl z-10">
+      <div className="relative p-[10px] rounded-xl bg-[var(--grid-bg)] border-t-2 border-l-2 border-white/20 border-b-2 border-r-2 border-black/40 shadow-2xl z-10">
         <GameBoard
           grid={grid}
           onDrop={placeBlock}
           showPerfect={showPerfect}
+          previewRows={previewRows}
+          previewCols={previewCols}
+          previewColor={previewColor}
         />
 
 
@@ -135,12 +139,13 @@ export default function Home() {
         )}
       </div>
 
-      {/* Controller / Inventory - Fixed to bottom for iOS visibility */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe mb-4 flex justify-center">
+      {/* Controller / Inventory - Lifted even higher for better reach/visibility */}
+      <div className="fixed bottom-32 left-0 right-0 z-30 pb-safe flex justify-center">
         <div className="w-full max-w-lg px-4">
           <BlockInventory
             blocks={inventory}
             onPlace={placeBlock}
+            onPreview={updatePreview}
           />
         </div>
       </div>

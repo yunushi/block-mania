@@ -7,11 +7,13 @@ import { getColorClass } from '@/utils/gameUtils';
 interface DraggableBlockProps {
   block: Block;
   onPlace: (blockId: string, row: number, col: number) => boolean;
+  onPreview: (block: Block | null, row: number, col: number) => void;
 }
 
-export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) {
+export default function DraggableBlock({ block, onPlace, onPreview }: DraggableBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragFrameRef = useRef<number | null>(null);
   const blockRef = useRef<HTMLDivElement>(null);
   const startPos = useRef({ x: 0, y: 0 });
   const startCenterRef = useRef({ x: 0, y: 0 });
@@ -24,8 +26,8 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
-      if (w <= 600) setCellSize(32);
-      else setCellSize(38);
+      if (w <= 600) setCellSize(40);
+      else setCellSize(44);
     };
     updateSize();
     window.addEventListener('resize', updateSize);
@@ -43,7 +45,7 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
 
   const findNearestCell = (x: number, y: number) => {
     let nearest = null;
-    let minDist = cellSize * 1.5; // Snap tolerance
+    let minDist = cellSize * 2.0; // Increased tolerance for easier placement
     for (const cell of gridCellsRef.current) {
       const dist = Math.sqrt(Math.pow(cell.x - x, 2) + Math.pow(cell.y - y, 2));
       if (dist < minDist) {
@@ -93,16 +95,42 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
     setIsDragging(true);
 
     handleMove.current = (moveEvent: PointerEvent) => {
-      const DRAG_Y_OFFSET = -80; // Render block 80px above finger
-      const rawX = moveEvent.clientX - startPos.current.x;
-      const rawY = moveEvent.clientY - startPos.current.y + DRAG_Y_OFFSET;
-
-      // FLUID DRAG: Always follow finger smoothly
-      if (blockRef.current) {
-        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.0)`;
-        dragOffsetRef.current = { x: rawX, y: rawY };
-      }
       latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
+      
+      if (!dragFrameRef.current) {
+        dragFrameRef.current = requestAnimationFrame(() => {
+          const { x: curX, y: curY } = latestPointerRef.current;
+          const DRAG_Y_OFFSET = -80;
+          const targetX = curX - startPos.current.x;
+          const targetY = curY - startPos.current.y + DRAG_Y_OFFSET;
+
+          // SMOOTHING: Lerp towards target for a more premium feel
+          // current = current + (target - current) * factor
+          const lerpFactor = 0.5; // Adjust this (0.1 to 1.0) for more/less 'weight'
+          const nextX = dragOffsetRef.current.x + (targetX - dragOffsetRef.current.x) * lerpFactor;
+          const nextY = dragOffsetRef.current.y + (targetY - dragOffsetRef.current.y) * lerpFactor;
+
+          if (blockRef.current) {
+            blockRef.current.style.transform = `translate3d(${nextX}px, ${nextY}px, 0) scale(1.0)`;
+            dragOffsetRef.current = { x: nextX, y: nextY };
+
+            // PREVIEW Logic (use latest target for accuracy)
+            const currentCenterX = startCenterRef.current.x + nextX;
+            const currentCenterY = startCenterRef.current.y + nextY;
+            const topLeftX = currentCenterX - blockWidthFull / 2;
+            const topLeftY = currentCenterY - blockHeightFull / 2;
+            const checkX = topLeftX + blockAnchorsRef.current.c * cellSize + cellSize / 2;
+            const checkY = topLeftY + blockAnchorsRef.current.r * cellSize + cellSize / 2;
+            const cell = findNearestCell(checkX, checkY);
+            if (cell) {
+              onPreview(block, cell.row - blockAnchorsRef.current.r, cell.col - blockAnchorsRef.current.c);
+            } else {
+              onPreview(null, -1, -1);
+            }
+          }
+          dragFrameRef.current = null;
+        });
+      }
     };
 
     handleUp.current = () => {
@@ -113,6 +141,7 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
       }
 
       setIsDragging(false);
+      onPreview(null, -1, -1);
 
       const curX = dragOffsetRef.current.x;
       const curY = dragOffsetRef.current.y;

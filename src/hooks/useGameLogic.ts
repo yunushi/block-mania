@@ -95,6 +95,9 @@ export const useGameLogic = () => {
   const [comboShoutout, setComboShoutout] = useState<{ text: string, type: string } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [currentSkin, setCurrentSkin] = useState<'classic' | 'neon' | 'gold'>('classic');
+  const [previewRows, setPreviewRows] = useState<number[]>([]);
+  const [previewCols, setPreviewCols] = useState<number[]>([]);
+  const [previewColor, setPreviewColor] = useState<string | null>(null);
   const cycleSkin = useCallback(() => {}, []);
 
   const toggleMute = useCallback(() => setIsMuted(prev => !prev), []);
@@ -204,10 +207,12 @@ export const useGameLogic = () => {
         
         if (lineCompletingIndices.length > 0 && Math.random() < helpProbability && spawnedHelpfulCount < 1) { 
           const filteredLineCompleters = lineCompletingIndices.filter(lIdx => {
+            const strShape = JSON.stringify(ALL_SHAPES[lIdx]);
+            // Strict duplicate check: not in current batch, and not in existing inventory
+            if (spawnedShapesInBatch.has(strShape)) return false;
+            if (newInventory.some(b => b && JSON.stringify(b.shape) === strShape)) return false;
             if (DIAGONAL_INDICES.includes(lIdx)) return false;
             if (lIdx === 35 && spawned3x3InBatch) return false;
-            const strShape = JSON.stringify(ALL_SHAPES[lIdx]);
-            if ((spawnedShapesInBatch.get(strShape) || 0) >= 2) return false;
             return true;
           });
           
@@ -216,10 +221,11 @@ export const useGameLogic = () => {
           spawnedHelpfulCount++;
         } else {
           const pool = activeShapePool.filter((s) => {
+            const strShape = JSON.stringify(s);
+            if (spawnedShapesInBatch.has(strShape)) return false;
+            if (newInventory.some(b => b && JSON.stringify(b.shape) === strShape)) return false;
             const poolIdx = ALL_SHAPES.indexOf(s);
             if (poolIdx === 35 && spawned3x3InBatch) return false;
-            const strShape = JSON.stringify(s);
-            if ((spawnedShapesInBatch.get(strShape) || 0) >= 2) return false;
             return true;
           });
           shape = pool[Math.floor(Math.random() * pool.length)];
@@ -227,7 +233,7 @@ export const useGameLogic = () => {
         
         if (shape) {
            const strShape = JSON.stringify(shape);
-           spawnedShapesInBatch.set(strShape, (spawnedShapesInBatch.get(strShape) || 0) + 1);
+           spawnedShapesInBatch.set(strShape, 1);
            if (ALL_SHAPES.indexOf(shape) === 35) spawned3x3InBatch = true;
            
            const color = availableColors[Math.floor(Math.random() * availableColors.length)];
@@ -399,10 +405,49 @@ export const useGameLogic = () => {
 
   const goToMenu = useCallback(() => setGameStatus('menu'), []);
 
+  const updatePreview = useCallback((block: Block | null, row: number, col: number) => {
+    if (!block || row === -1 || col === -1) {
+      setPreviewRows([]);
+      setPreviewCols([]);
+      setPreviewColor(null);
+      return;
+    }
+
+    if (!canPlaceBlock(grid, block, { row, col })) {
+      setPreviewRows([]);
+      setPreviewCols([]);
+      setPreviewColor(null);
+      return;
+    }
+
+    const tempGrid = grid.map(r => [...r]);
+    for (let r = 0; r < block.shape.length; r++) {
+      for (let c = 0; c < block.shape[r].length; c++) {
+        if (block.shape[r][c] === 1) {
+          tempGrid[row + r][col + c] = { image: block.image, id: 'preview' };
+        }
+      }
+    }
+
+    const rowsToClear: number[] = [];
+    const colsToClear: number[] = [];
+    for (let r = 0; r < GRID_SIZE; r++) if (tempGrid[r].every(cell => cell !== null)) rowsToClear.push(r);
+    for (let c = 0; c < GRID_SIZE; c++) {
+      let f = true;
+      for (let r = 0; r < GRID_SIZE; r++) if (tempGrid[r][c] === null) { f = false; break; }
+      if (f) colsToClear.push(c);
+    }
+
+    setPreviewRows(rowsToClear);
+    setPreviewCols(colsToClear);
+    setPreviewColor(block.image);
+  }, [grid, canPlaceBlock]);
+
   return {
     grid, score, inventory, gameOver, gameStatus, setGameStatus,
     comboCount, showCombo, showPerfect, comboShoutout, isMuted, toggleMute,
-    currentSkin, changeSkin, placeBlock, 
+    currentSkin, changeSkin, placeBlock, updatePreview,
+    previewRows, previewCols, previewColor,
     resetGame, startGame, goToMenu, cycleSkin
   };
 };

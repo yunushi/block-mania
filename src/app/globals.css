@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #9d9d9d; 
+  --background: #3A7BD5; /* Brighter Blue Background */
   --foreground: #ffffff;
-  --grid-bg: #323232; 
-  --cell-bg: #222222; 
+  --grid-bg: #254673; /* Slightly lighter blue for better harmony */
+  --cell-bg: #1c3558; /* Balanced dark blue for depth */
   --accent: #f4a5ae;
-  --cell-size: 38px; /* Web size */
+  --cell-size: 44px; /* Web size */
 }
 
 @media (max-width: 600px) {
   :root {
-    --cell-size: 32px; /* Mobile size */
+    --cell-size: 40px; /* Mobile size */
   }
 }
 
@@ -35,60 +35,65 @@ body {
 }
 
 /* REFINED BEVEL STYLE */
+/* PIXEL-PERFECT FACETED 3D BLOCKS (Reference Match - Softened) */
 .cell-cube {
   width: 100%;
   height: 100%;
-  border-radius: 2px;
+  border-radius: 1px;
   position: relative;
+  box-sizing: border-box;
+  border: 1px solid rgba(0,0,0,0.25); /* Subtle sharp outer edge */
+  overflow: hidden;
 }
 
-/* Sharp Faceted Bevel using Borders */
 .cell-cube::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-width: 6px;
   border-style: solid;
+  border-width: 6px; 
+  pointer-events: none;
 }
 
-.cell-color-1 { background: #f4a5ae; }
+/* Color Mappings with Balanced Contrast */
+.cell-color-1 { background-color: #d10000; }
 .cell-color-1::before {
-  border-top-color: #fbc7cc;
-  border-left-color: #fbc7cc;
-  border-right-color: #c97f88;
-  border-bottom-color: #c97f88;
+  border-top-color: #e65c5c;
+  border-left-color: #e65c5c;
+  border-bottom-color: #8a0000;
+  border-right-color: #8a0000;
 }
 
-.cell-color-2 { background: #8cd4f5; }
+.cell-color-2 { background-color: #e5c100; }
 .cell-color-2::before {
-  border-top-color: #c3ecff;
-  border-left-color: #c3ecff;
-  border-right-color: #59a6c7;
-  border-bottom-color: #59a6c7;
+  border-top-color: #f2d64d;
+  border-left-color: #f2d64d;
+  border-bottom-color: #997a00;
+  border-right-color: #997a00;
 }
 
-.cell-color-3 { background: #ffffff; }
+.cell-color-3 { background-color: #c400c4; }
 .cell-color-3::before {
-  border-top-color: #ffffff;
-  border-left-color: #ffffff;
-  border-right-color: #d1d5db;
-  border-bottom-color: #d1d5db;
+  border-top-color: #d94dd9;
+  border-left-color: #d94dd9;
+  border-bottom-color: #7a007a;
+  border-right-color: #7a007a;
 }
 
-.cell-color-4 { background: #f4a5ae; }
+.cell-color-4 { background-color: #00b300; }
 .cell-color-4::before {
-  border-top-color: #fbc7cc;
-  border-left-color: #fbc7cc;
-  border-right-color: #c97f88;
-  border-bottom-color: #c97f88;
+  border-top-color: #4dd94d;
+  border-left-color: #4dd94d;
+  border-bottom-color: #007300;
+  border-right-color: #007300;
 }
 
-.cell-color-5 { background: #8cd4f5; }
+.cell-color-5 { background-color: #00b3b3; }
 .cell-color-5::before {
-  border-top-color: #c3ecff;
-  border-left-color: #c3ecff;
-  border-right-color: #59a6c7;
-  border-bottom-color: #59a6c7;
+  border-top-color: #4dd9d9;
+  border-left-color: #4dd9d9;
+  border-bottom-color: #007373;
+  border-right-color: #007373;
 }
 
 /* Animations */
@@ -137,4 +142,35 @@ body {
 @keyframes pulse {
   from { opacity: 0.3; }
   to { opacity: 0.7; }
+}
+
+@keyframes pulse-soft {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+.pulse-score {
+  animation: pulse-soft 2s infinite alternate ease-in-out;
+}
+
+@keyframes breathe {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+.inventory-breathe {
+  animation: breathe 3s infinite ease-in-out;
+}
+
+@keyframes bg-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-animated {
+  background: linear-gradient(-45deg, #3A7BD5, #2A4B7C, #3A7BD5, #4A90E2);
+  background-size: 400% 400%;
+  animation: bg-flow 15s infinite ease-in-out;
 }
