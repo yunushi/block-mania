@@ -37,6 +37,55 @@ export default function Home() {
   const hasActiveGame = score > 0 && !gameOver;
   return (
     <div className={`theme-${currentTheme} min-h-[100dvh] w-full flex flex-col bg-[var(--background)] transition-colors duration-500`}>
+      
+      {/* 3D Theme Toggle Button - Always Visible, Fixed Position */}
+      <button
+        onClick={toggleTheme}
+        title={currentTheme === 'blue' ? 'Switch to Grey' : 'Switch to Blue'}
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 70,
+          width: 44, height: 44,
+          borderRadius: 12,
+          border: 'none',
+          cursor: 'pointer',
+          zIndex: 9999,
+          background: currentTheme === 'blue'
+            ? 'linear-gradient(145deg, #6b7280, #4b5563)'
+            : 'linear-gradient(145deg, #3b82f6, #1d4ed8)',
+          boxShadow: currentTheme === 'blue'
+            ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
+            : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)',
+          transition: 'background 0.3s ease, box-shadow 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 20,
+          userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+        onPointerDown={e => {
+          const el = e.currentTarget;
+          el.style.transform = 'translateY(4px)';
+          el.style.boxShadow = currentTheme === 'blue'
+            ? '0 1px 0 #374151, 0 2px 4px rgba(0,0,0,0.4)'
+            : '0 1px 0 #1e3a8a, 0 2px 4px rgba(0,0,0,0.4)';
+        }}
+        onPointerUp={e => {
+          const el = e.currentTarget;
+          el.style.transform = 'translateY(0px)';
+          el.style.boxShadow = currentTheme === 'blue'
+            ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
+            : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)';
+        }}
+        onPointerLeave={e => {
+          (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
+        }}
+      >
+        {currentTheme === 'blue' ? '🌫️' : '⚡'}
+      </button>
+
       {gameStatus === 'menu' ? (
         <MainMenu onPlay={startGame} highScore={highScore} hasActiveGame={hasActiveGame} />
       ) : (
@@ -70,60 +119,13 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Top Right: Theme Toggle + Settings Gear */}
-          <div className="flex items-center gap-2 mt-2">
-            {/* 3D Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              title={currentTheme === 'blue' ? 'Switch to Grey' : 'Switch to Blue'}
-              style={{
-                width: 44, height: 44,
-                borderRadius: 12,
-                border: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                outline: 'none',
-                background: currentTheme === 'blue'
-                  ? 'linear-gradient(145deg, #6b7280, #4b5563)'
-                  : 'linear-gradient(145deg, #3b82f6, #1d4ed8)',
-                boxShadow: currentTheme === 'blue'
-                  ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
-                  : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)',
-                transition: 'all 0.1s ease',
-                transform: 'translateY(0px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-                userSelect: 'none',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-              onPointerDown={e => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(4px)';
-                (e.currentTarget as HTMLElement).style.boxShadow = currentTheme === 'blue'
-                  ? '0 1px 0 #374151, 0 2px 4px rgba(0,0,0,0.4)'
-                  : '0 1px 0 #1e3a8a, 0 2px 4px rgba(0,0,0,0.4)';
-              }}
-              onPointerUp={e => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
-                (e.currentTarget as HTMLElement).style.boxShadow = currentTheme === 'blue'
-                  ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
-                  : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)';
-              }}
-              onPointerLeave={e => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
-              }}
-            >
-              {currentTheme === 'blue' ? '🌫️' : '⚡'}
-            </button>
-
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="text-4xl text-white hover:opacity-80 transition-all transform hover:rotate-90"
-            >
-              ⚙️
-            </button>
-          </div>
+          {/* Top Right: Settings Gear (theme button is fixed globally) */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="text-4xl text-white hover:opacity-80 transition-all transform hover:rotate-90 mt-2"
+          >
+            ⚙️
+          </button>
         </div>
 
         {/* Large Score in Center */}

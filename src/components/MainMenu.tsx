@@ -10,7 +10,7 @@ interface MainMenuProps {
 
 const MainMenu: React.FC<MainMenuProps> = ({ onPlay, highScore, hasActiveGame }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 relative overflow-hidden bg-[#3A7BD5]">
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #87CEEB 0%, #5BB8F5 50%, #3A9AD9 100%)' }}>
       <div className="relative z-10 flex flex-col items-center gap-12 max-w-lg w-full">
         {/* Title */}
         <div className="text-center space-y-2">

@@ -114,7 +114,7 @@ export default function DraggableBlock({ block, onPlace, onPreview }: DraggableB
 
     const onPointerMove = (moveEvent: PointerEvent) => {
       const deltaX = moveEvent.clientX - startPos.current.x;
-      const DRAG_Y_OFFSET = -80;
+      const DRAG_Y_OFFSET = -40; // Lift block above finger but stay responsive
       const deltaY = (moveEvent.clientY - startPos.current.y) + DRAG_Y_OFFSET;
       
       dragOffsetRef.current = { x: deltaX, y: deltaY };

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Grid, Block, Position } from '@/types/game';
 
 const GRID_SIZE = 8;
@@ -100,11 +100,6 @@ export const useGameLogic = () => {
   const [previewCols, setPreviewCols] = useState<number[]>([]);
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   
-  // Randomize theme on initial mount (Client-side only to avoid hydration mismatch)
-  useEffect(() => {
-    setCurrentTheme(Math.random() < 0.5 ? 'blue' : 'grey');
-  }, []);
-
   const [isClearingInProgress, setIsClearingInProgress] = useState(false);
 
   const toggleTheme = useCallback(() => {
