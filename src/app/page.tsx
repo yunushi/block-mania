@@ -13,7 +13,7 @@ export default function Home() {
     comboCount, showCombo, showPerfect, comboShoutout,
     gameStatus,
     placeBlock, resetGame, startGame, goToMenu, updatePreview,
-    previewRows, previewCols, previewColor,
+    previewRows, previewCols, previewColor, currentTheme, toggleTheme
   } = useGameLogic();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -35,13 +35,12 @@ export default function Home() {
   }, [score]);
 
   const hasActiveGame = score > 0 && !gameOver;
-
-  if (gameStatus === 'menu') {
-    return <MainMenu onPlay={startGame} highScore={highScore} hasActiveGame={hasActiveGame} />;
-  }
-
   return (
-    <main className="flex flex-col items-center w-full h-[100dvh] select-none overflow-hidden relative bg-animated pt-safe pb-safe">
+    <div className={`theme-${currentTheme} min-h-[100dvh] w-full flex flex-col bg-[var(--background)] transition-colors duration-500`}>
+      {gameStatus === 'menu' ? (
+        <MainMenu onPlay={startGame} highScore={highScore} hasActiveGame={hasActiveGame} />
+      ) : (
+        <main className="flex flex-col items-center w-full h-[100dvh] select-none overflow-hidden relative bg-animated pt-safe pb-safe">
 
       {/* Combo Indicator - Moved to TOP center */}
       {showCombo && comboCount > 1 && (
@@ -71,13 +70,60 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Top Right: Settings Gear */}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="text-4xl text-white hover:opacity-80 transition-all transform hover:rotate-90 mt-2"
-          >
-            ⚙️
-          </button>
+          {/* Top Right: Theme Toggle + Settings Gear */}
+          <div className="flex items-center gap-2 mt-2">
+            {/* 3D Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={currentTheme === 'blue' ? 'Switch to Grey' : 'Switch to Blue'}
+              style={{
+                width: 44, height: 44,
+                borderRadius: 12,
+                border: 'none',
+                cursor: 'pointer',
+                position: 'relative',
+                outline: 'none',
+                background: currentTheme === 'blue'
+                  ? 'linear-gradient(145deg, #6b7280, #4b5563)'
+                  : 'linear-gradient(145deg, #3b82f6, #1d4ed8)',
+                boxShadow: currentTheme === 'blue'
+                  ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
+                  : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)',
+                transition: 'all 0.1s ease',
+                transform: 'translateY(0px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                userSelect: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              onPointerDown={e => {
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(4px)';
+                (e.currentTarget as HTMLElement).style.boxShadow = currentTheme === 'blue'
+                  ? '0 1px 0 #374151, 0 2px 4px rgba(0,0,0,0.4)'
+                  : '0 1px 0 #1e3a8a, 0 2px 4px rgba(0,0,0,0.4)';
+              }}
+              onPointerUp={e => {
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
+                (e.currentTarget as HTMLElement).style.boxShadow = currentTheme === 'blue'
+                  ? '0 5px 0 #374151, 0 6px 8px rgba(0,0,0,0.4)'
+                  : '0 5px 0 #1e3a8a, 0 6px 8px rgba(0,0,0,0.4)';
+              }}
+              onPointerLeave={e => {
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(0px)';
+              }}
+            >
+              {currentTheme === 'blue' ? '🌫️' : '⚡'}
+            </button>
+
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-4xl text-white hover:opacity-80 transition-all transform hover:rotate-90"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
 
         {/* Large Score in Center */}
@@ -152,5 +198,7 @@ export default function Home() {
 
       {/* Remove Instructions to keep it clean like the image */}
     </main>
+      )}
+    </div>
   );
 }

@@ -1,17 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #3A7BD5; /* Brighter Blue Background */
-  --foreground: #ffffff;
-  --grid-bg: #254673; /* Slightly lighter blue for better harmony */
-  --cell-bg: #1c3558; /* Balanced dark blue for depth */
-  --accent: #f4a5ae;
-  --cell-size: 44px; /* Web size */
+  /* Default Blue Theme */
+  --background: #3A7BD5;
+  --grid-bg: #254673;
+  --cell-bg: #1c3558;
+  --accent-color: #fbb034;
+  --cell-size: 44px;
+}
+
+.theme-grey {
+  --background: #a1a1a1; /* Neutral grey background */
+  --grid-bg: #333333; /* Darker grid container */
+  --cell-bg: #262626; /* Almost black empty cells */
+  --accent-color: #ffffff; /* Removed yellow, now white */
+}
+
+.theme-grey .bg-animated {
+  background: var(--background) !important;
+  animation: none !important;
+}
+
+.theme-grey .pulse-score {
+  animation: none !important;
+}
+
+.theme-grey .inventory-breathe {
+  animation: none !important;
 }
 
 @media (max-width: 600px) {
   :root {
-    --cell-size: 40px; /* Mobile size */
+    --cell-size: 40px;
   }
 }
 
@@ -35,14 +55,14 @@ body {
 }
 
 /* REFINED BEVEL STYLE */
-/* PIXEL-PERFECT FACETED 3D BLOCKS (Reference Match - Softened) */
+/* PIXEL-PERFECT GEM-LIKE FACETED BLOCKS */
 .cell-cube {
   width: 100%;
   height: 100%;
   border-radius: 1px;
   position: relative;
   box-sizing: border-box;
-  border: 1px solid rgba(0,0,0,0.25); /* Subtle sharp outer edge */
+  border: 1px solid rgba(0,0,0,0.3);
   overflow: hidden;
 }
 
@@ -51,49 +71,45 @@ body {
   position: absolute;
   inset: 0;
   border-style: solid;
-  border-width: 6px; 
+  border-width: 8px; /* Balanced sharp bevel for vibrancy */
   pointer-events: none;
 }
 
-/* Color Mappings with Balanced Contrast */
-.cell-color-1 { background-color: #d10000; }
-.cell-color-1::before {
-  border-top-color: #e65c5c;
-  border-left-color: #e65c5c;
-  border-bottom-color: #8a0000;
-  border-right-color: #8a0000;
+/* BLUE THEME (Vibrant High-Contrast) */
+:root, .theme-blue {
+  .cell-color-1 { background-color: #f00000; }
+  .cell-color-1::before { border-top-color: #ff8585; border-left-color: #ff8585; border-bottom-color: #9c0000; border-right-color: #9c0000; }
+  
+  .cell-color-2 { background-color: #f9d71c; } /* Vibrant Yellow exactly like image */
+  .cell-color-2::before { border-top-color: #fff094; border-left-color: #fff094; border-bottom-color: #c4a500; border-right-color: #c4a500; }
+  
+  .cell-color-3 { background-color: #ff00ff; }
+  .cell-color-3::before { border-top-color: #ff85ff; border-left-color: #ff85ff; border-bottom-color: #9c009c; border-right-color: #9c009c; }
+  
+  .cell-color-4 { background-color: #39ff14; }
+  .cell-color-4::before { border-top-color: #b0ff9c; border-left-color: #b0ff9c; border-bottom-color: #1e8c00; border-right-color: #1e8c00; }
+  
+  .cell-color-5 { background-color: #00ffff; }
+  .cell-color-5::before { border-top-color: #85ffff; border-left-color: #85ffff; border-bottom-color: #008c8c; border-right-color: #008c8c; }
 }
 
-.cell-color-2 { background-color: #e5c100; }
-.cell-color-2::before {
-  border-top-color: #f2d64d;
-  border-left-color: #f2d64d;
-  border-bottom-color: #997a00;
-  border-right-color: #997a00;
-}
-
-.cell-color-3 { background-color: #c400c4; }
-.cell-color-3::before {
-  border-top-color: #d94dd9;
-  border-left-color: #d94dd9;
-  border-bottom-color: #7a007a;
-  border-right-color: #7a007a;
-}
-
-.cell-color-4 { background-color: #00b300; }
-.cell-color-4::before {
-  border-top-color: #4dd94d;
-  border-left-color: #4dd94d;
-  border-bottom-color: #007300;
-  border-right-color: #007300;
-}
-
-.cell-color-5 { background-color: #00b3b3; }
-.cell-color-5::before {
-  border-top-color: #4dd9d9;
-  border-left-color: #4dd9d9;
-  border-bottom-color: #007373;
-  border-right-color: #007373;
+/* GREY THEME (Exact from reference image - Restricted to 3 colors) */
+.theme-grey {
+  .cell-color-1 { background-color: #f4a5ae; } /* Pastel Pink */
+  .cell-color-1::before { border-top-color: #fbc7cc; border-left-color: #fbc7cc; border-bottom-color: #a86b72; border-right-color: #a86b72; }
+  
+  .cell-color-2 { background-color: #8cd4f5; } /* Pastel Blue */
+  .cell-color-2::before { border-top-color: #b4f0fe; border-left-color: #b4f0fe; border-bottom-color: #2e8db5; border-right-color: #2e8db5; }
+  
+  .cell-color-3 { background-color: #ffffff; } /* White */
+  .cell-color-3::before { border-top-color: #ffffff; border-left-color: #ffffff; border-bottom-color: #9ca3af; border-right-color: #9ca3af; }
+  
+  /* Map 4 and 5 back to Pink and Blue to strictly maintain 3-color palette */
+  .cell-color-4 { background-color: #f4a5ae; } 
+  .cell-color-4::before { border-top-color: #fbc7cc; border-left-color: #fbc7cc; border-bottom-color: #a86b72; border-right-color: #a86b72; }
+  
+  .cell-color-5 { background-color: #8cd4f5; }
+  .cell-color-5::before { border-top-color: #b4f0fe; border-left-color: #b4f0fe; border-bottom-color: #2e8db5; border-right-color: #2e8db5; }
 }
 
 /* Animations */

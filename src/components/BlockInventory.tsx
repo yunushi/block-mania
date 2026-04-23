@@ -18,10 +18,10 @@ const BlockInventory: React.FC<BlockInventoryProps> = ({ blocks, onPlace, onPrev
         {[0, 1, 2].map((index) => (
           <div
             key={index}
-            className="w-[80px] flex justify-center items-center min-h-[90px] relative"
+            className="w-[90px] h-[90px] flex justify-center items-center relative"
           >
             {blocks[index] ? (
-              <div className="relative flex justify-center items-center w-full h-full transform hover:scale-105 active:scale-95 transition-all duration-300 inventory-breathe">
+              <div key={blocks[index]!.id} className="relative flex justify-center items-center w-full h-full">
                 <DraggableBlock
                   block={blocks[index]!}
                   onPlace={onPlace}

@@ -15,7 +15,7 @@ interface GameBoardProps {
 
 const GameBoard: React.FC<GameBoardProps> = ({ grid, showPerfect, previewRows = [], previewCols = [], previewColor }) => {
   return (
-    <div className="grid grid-cols-8 gap-[1px] p-[1px] bg-[#1E3A5F] rounded-[4px] relative overflow-hidden">
+    <div className="grid grid-cols-8 gap-[1px] p-[1px] bg-[var(--grid-bg)] rounded-[8px] relative overflow-hidden border-[4px] border-[var(--grid-bg)]">
       {/* Single unified rainbow overlay — one continuous gradient across the full grid */}
       {showPerfect && (
         <div className="rainbow-unified-overlay" />
@@ -39,7 +39,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ grid, showPerfect, previewRows = 
             >
               {/* Preview Highlight Border */}
               {isPreview && (
-                <div className="absolute inset-0 border-2 border-white/40 z-30 pointer-events-none animate-pulse" />
+                <div className="absolute inset-0 border-2 border-white/80 z-30 pointer-events-none animate-pulse" />
               )}
 
               {isPreview ? (

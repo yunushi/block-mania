@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Grid, Block, Position } from '@/types/game';
 
 const GRID_SIZE = 8;
@@ -95,9 +95,22 @@ export const useGameLogic = () => {
   const [comboShoutout, setComboShoutout] = useState<{ text: string, type: string } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [currentSkin, setCurrentSkin] = useState<'classic' | 'neon' | 'gold'>('classic');
+  const [currentTheme, setCurrentTheme] = useState<'blue' | 'grey'>('blue');
   const [previewRows, setPreviewRows] = useState<number[]>([]);
   const [previewCols, setPreviewCols] = useState<number[]>([]);
   const [previewColor, setPreviewColor] = useState<string | null>(null);
+  
+  // Randomize theme on initial mount (Client-side only to avoid hydration mismatch)
+  useEffect(() => {
+    setCurrentTheme(Math.random() < 0.5 ? 'blue' : 'grey');
+  }, []);
+
+  const [isClearingInProgress, setIsClearingInProgress] = useState(false);
+
+  const toggleTheme = useCallback(() => {
+    setCurrentTheme(prev => prev === 'blue' ? 'grey' : 'blue');
+  }, []);
+
   const cycleSkin = useCallback(() => {}, []);
 
   const toggleMute = useCallback(() => setIsMuted(prev => !prev), []);
@@ -257,6 +270,7 @@ export const useGameLogic = () => {
     setComboGrace(3);
     setShowCombo(false);
     setShowPerfect(false);
+    setCurrentTheme(Math.random() < 0.5 ? 'blue' : 'grey');
     
     // Initial Spawn
     const availableColors = SKIN_ASSETS[currentSkin];
@@ -299,10 +313,18 @@ export const useGameLogic = () => {
   }, [canPlaceBlock]);
 
   const placeBlock = useCallback((blockId: string, row: number, col: number) => {
+    if (isClearingInProgress) return false;
+
+    // CRITICAL: Reset preview immediately on place
+    setPreviewRows([]);
+    setPreviewCols([]);
+    setPreviewColor(null);
+
     const blockIndex = inventory.findIndex(b => b?.id === blockId);
     if (blockIndex === -1) return false;
     const block = inventory[blockIndex]!;
     if (!canPlaceBlock(grid, block, { row, col })) return false;
+    
     playSound('place');
     const newGrid = grid.map(r => [...r]);
     let cellsPlaced = 0;
@@ -314,23 +336,32 @@ export const useGameLogic = () => {
         }
       }
     }
+
     const rowsToClear: number[] = [];
     const colsToClear: number[] = [];
-    for (let r = 0; r < GRID_SIZE; r++) if (newGrid[r].every(cell => cell !== null)) rowsToClear.push(r);
+    for (let r = 0; r < GRID_SIZE; r++) {
+      if (newGrid[r].every(cell => cell !== null && !cell.isClearing)) rowsToClear.push(r);
+    }
     for (let c = 0; c < GRID_SIZE; c++) {
       let f = true;
-      for (let r = 0; r < GRID_SIZE; r++) if (newGrid[r][c] === null) { f = false; break; }
+      for (let r = 0; r < GRID_SIZE; r++) {
+        if (newGrid[r][c] === null || newGrid[r][c]?.isClearing) { f = false; break; }
+      }
       if (f) colsToClear.push(c);
     }
+
     const clearedLines = rowsToClear.length + colsToClear.length;
-    const placementScore = cellsPlaced * 20; // Massively increased base score
+    const placementScore = cellsPlaced * 20;
+
     if (clearedLines > 0) {
+      setIsClearingInProgress(true);
       const newCombo = comboCount + clearedLines;
-      // Only play generic combo sound if NO shoutout will be triggered
-      if (newCombo < 2) {
-        playSound('combo');
-      }
-      const clearingGrid = newGrid.map((gr, r) => gr.map((cell, c) => (rowsToClear.includes(r) || colsToClear.includes(c)) ? (cell ? {...cell, isClearing: true} : cell) : cell));
+      if (newCombo < 2) playSound('combo');
+
+      const clearingGrid = newGrid.map((gr, r) => gr.map((cell, c) => 
+        (rowsToClear.includes(r) || colsToClear.includes(c)) ? (cell ? {...cell, isClearing: true} : cell) : cell
+      ));
+      
       setGrid(clearingGrid);
       const updatedInv = [...inventory];
       updatedInv[blockIndex] = null;
@@ -339,14 +370,12 @@ export const useGameLogic = () => {
       setComboGrace(3);
       setShowCombo(true);
       
-      // Trigger Shoutout
       if (newCombo >= 2) {
         let sText = 'NICE';
         let sType = 'nice';
         if (newCombo >= 4) { sText = 'GREAT'; sType = 'great'; }
         if (newCombo >= 6) { sText = 'INCREDIBLE'; sType = 'incredible'; }
         if (newCombo >= 8) { sText = 'GODLIKE'; sType = 'godlike'; }
-        
         setComboShoutout({ text: sText, type: sType });
         playSound(sType as keyof typeof AUDIO_URLS);
         setTimeout(() => setComboShoutout(null), 2000);
@@ -355,21 +384,33 @@ export const useGameLogic = () => {
       setTimeout(() => setShowCombo(false), 1500);
       setTimeout(() => {
         const finalGrid = clearingGrid.map((gr, r) => gr.map((cell, c) => (rowsToClear.includes(r) || colsToClear.includes(c)) ? null : cell));
+        
         if (finalGrid.every(row => row.every(cell => cell === null))) {
           playSound('perfect');
           setComboCount(prev => prev + 10);
           setShowPerfect(true);
-          setTimeout(() => setShowPerfect(false), 3000);
-        }
-        setGrid(finalGrid);
-        setScore(prev => prev + placementScore + Math.floor((clearedLines * 400) * (1 + (newCombo * 0.5))));
-        
-        const isAllEmpty = updatedInv.every(b => b === null);
-        if (isAllEmpty) {
-          generateInventory();
+          const nextTheme = currentTheme === 'blue' ? 'grey' : 'blue';
+          const transitionGrid = finalGrid.map(() => Array(GRID_SIZE).fill(null).map(() => ({
+            image: `color-${Math.floor(Math.random() * 5) + 1}`,
+            id: `transition-${Math.random()}`
+          })));
+          setGrid(transitionGrid);
+
+          setTimeout(() => {
+            setGrid(finalGrid);
+            setCurrentTheme(nextTheme);
+            generateInventory();
+            setIsClearingInProgress(false);
+            setTimeout(() => setShowPerfect(false), 2000);
+          }, 800);
+        } else {
+          setGrid(finalGrid);
+          setIsClearingInProgress(false);
         }
 
-        // Check game over
+        setScore(prev => prev + placementScore + Math.floor((clearedLines * 400) * (1 + (newCombo * 0.5))));
+        if (updatedInv.every(b => b === null)) generateInventory();
+
         setTimeout(() => {
           setInventory(prev => {
             if (checkGameOver(finalGrid, prev)) { setGameOver(true); setGameStatus('gameOver'); }
@@ -387,11 +428,7 @@ export const useGameLogic = () => {
       setInventory(updatedInv);
       setGrid(newGrid);
       setScore(prev => prev + placementScore);
-
-      const isAllEmpty = updatedInv.every(b => b === null);
-      if (isAllEmpty) {
-        generateInventory();
-      }
+      if (updatedInv.every(b => b === null)) generateInventory();
 
       setTimeout(() => {
         setInventory(prev => {
@@ -401,7 +438,7 @@ export const useGameLogic = () => {
       }, 100);
     }
     return true;
-  }, [grid, inventory, comboCount, comboGrace, canPlaceBlock, generateInventory, checkGameOver, playSound]);
+  }, [grid, inventory, comboCount, comboGrace, currentTheme, isClearingInProgress, canPlaceBlock, generateInventory, checkGameOver, playSound]);
 
   const goToMenu = useCallback(() => setGameStatus('menu'), []);
 
@@ -447,7 +484,7 @@ export const useGameLogic = () => {
     grid, score, inventory, gameOver, gameStatus, setGameStatus,
     comboCount, showCombo, showPerfect, comboShoutout, isMuted, toggleMute,
     currentSkin, changeSkin, placeBlock, updatePreview,
-    previewRows, previewCols, previewColor,
+    previewRows, previewCols, previewColor, currentTheme, toggleTheme,
     resetGame, startGame, goToMenu, cycleSkin
   };
 };
