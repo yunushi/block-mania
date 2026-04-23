@@ -140,7 +140,7 @@ export default function Home() {
       </div>
 
       {/* Controller / Inventory - Lifted even higher for better reach/visibility */}
-      <div className="fixed bottom-32 left-0 right-0 z-30 pb-safe flex justify-center">
+      <div className="fixed bottom-48 left-0 right-0 z-30 pb-safe flex justify-center">
         <div className="w-full max-w-lg px-4">
           <BlockInventory
             blocks={inventory}
