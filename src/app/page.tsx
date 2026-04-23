@@ -60,8 +60,8 @@ export default function Home() {
       )}
 
 
-      {/* HEADER Layout from Image */}
-      <div className="w-full ps-4 pe-4 max-w-lg flex flex-col gap-4 pt-4 z-20">
+      {/* Header Area - Reduced top padding to shift everything up */}
+      <div className="w-full ps-4 pe-4 max-w-lg flex flex-col gap-2 pt-0 z-20">
         <div className="flex justify-between items-start">
           {/* Top Left: Crown + High Score */}
           <div className="flex items-center gap-1 mt-2 pulse-score">
@@ -81,7 +81,7 @@ export default function Home() {
         </div>
 
         {/* Large Score in Center */}
-        <div className="text-center drop-shadow-lg pulse-score">
+        <div className="text-center drop-shadow-lg pulse-score -mt-4">
           <div className="text-6xl font-bold text-white tabular-nums tracking-tighter">
             {score}
           </div>
@@ -140,7 +140,7 @@ export default function Home() {
       </div>
 
       {/* Controller / Inventory - Lifted even higher for better reach/visibility */}
-      <div className="fixed bottom-48 left-0 right-0 z-30 pb-safe flex justify-center">
+      <div className="fixed bottom-60 left-0 right-0 z-30 pb-safe flex justify-center">
         <div className="w-full max-w-lg px-4">
           <BlockInventory
             blocks={inventory}
