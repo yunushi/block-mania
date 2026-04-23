@@ -4,20 +4,14 @@
   --background: #9d9d9d; 
   --foreground: #ffffff;
   --grid-bg: #323232; 
-  --cell-bg: #222222; /* Darker cells as in image */
+  --cell-bg: #222222; 
   --accent: #f4a5ae;
-  --cell-size: 46px; 
+  --cell-size: 38px; /* Web size */
 }
 
-@media (max-width: 420px) {
+@media (max-width: 600px) {
   :root {
-    --cell-size: 38px;
-  }
-}
-
-@media (max-width: 360px) {
-  :root {
-    --cell-size: 32px;
+    --cell-size: 32px; /* Mobile size */
   }
 }
 

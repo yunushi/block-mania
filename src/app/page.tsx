@@ -40,20 +40,36 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col items-center h-[100dvh] p-4 select-none overflow-hidden relative bg-[#9d9d9d]">
+    <main className="flex flex-col items-center w-full gap-18 h-[100dvh] select-none overflow-hidden relative bg-[#9d9d9d]">
+
+      {/* Combo Indicator - Moved to TOP center */}
+      {showCombo && comboCount > 1 && (
+        <div className="absolute top-18 left-1/2 -translate-x-1/2 whitespace-nowrap mt-20 z-[1000] animate-bounce-in">
+          <div className="combo-text text-5xl font-black italic tracking-tighter">
+            <span className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">COMBO </span>
+            <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">x{comboCount}</span>
+          </div>
+
+          {comboShoutout && (
+            <div className={`combo-shoutout shoutout-${comboShoutout.type} text-6xl absolute top-14 left-1/2 -translate-x-1/2`}>
+              {comboShoutout.text}
+            </div>
+          )}
+        </div>
+      )}
 
 
       {/* HEADER Layout from Image */}
-      <div className="w-full max-w-lg flex flex-col gap-4 px-6 pt-4 z-20">
+      <div className="w-full ps-4 pe-4 max-w-lg flex flex-col gap-4 pt-4 z-20">
         <div className="flex justify-between items-start">
           {/* Top Left: Crown + High Score */}
           <div className="flex items-center gap-1 mt-2">
-            <span className="text-3xl filter drop-shadow-sm">👑</span>
-            <span className="text-3xl font-extrabold text-[#fbb034] tracking-tight">
+            <span className="text-3xl filter drop-shadow-sm mb-2">👑</span>
+            <span className="text-2xl font-medium text-[#fbb034] tracking-tight">
               {highScore}
             </span>
           </div>
-          
+
           {/* Top Right: Settings Gear */}
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -65,7 +81,7 @@ export default function Home() {
 
         {/* Large Score in Center */}
         <div className="flex justify-center -mt-2">
-          <span className="text-[120px] font-bold text-white leading-none tracking-tight">
+          <span className="text-[80px] font-bold text-white leading-none tracking-tight">
             {score}
           </span>
         </div>
@@ -86,21 +102,6 @@ export default function Home() {
           showPerfect={showPerfect}
         />
 
-        {/* Combo Indicator */}
-        {showCombo && comboCount > 1 && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap z-50">
-            <div className="combo-text text-5xl font-black italic tracking-tighter">
-              <span className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">COMBO </span>
-              <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">x{comboCount}</span>
-            </div>
-
-            {comboShoutout && (
-              <div className={`combo-shoutout shoutout-${comboShoutout.type} text-6xl absolute top-10 left-1/2 -translate-x-1/2`}>
-                {comboShoutout.text}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Perfect Clear Indicator */}
         {showPerfect && (
@@ -135,7 +136,7 @@ export default function Home() {
       </div>
 
       {/* Controller / Inventory - Positioned relative instead of fixed to avoid overlap */}
-      <div className="w-full max-w-lg mt-auto mb-8 z-30">
+      <div className="max-w-lg m-0 z-30" style={{ marginBottom: "6rem" }}>
         <BlockInventory
           blocks={inventory}
           onPlace={placeBlock}

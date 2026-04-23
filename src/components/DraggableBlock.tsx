@@ -20,25 +20,24 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
   const blockAnchorsRef = useRef({ r: 0, c: 0 }); // Cache the anchor of the block's first solid cell
 
   // Sync cell size to CSS breakpoints for accurate pointer math
-  const [cellSize, setCellSize] = useState(44);
+  const [cellSize, setCellSize] = useState(38);
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth;
-      if (w <= 360) setCellSize(32);
-      else if (w <= 420) setCellSize(38);
-      else setCellSize(44);
+      if (w <= 600) setCellSize(32);
+      else setCellSize(38);
     };
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  const GRID_GAP = 4;
+  const GRID_GAP = 0;
   const columns = block.shape[0].length;
   const rows = block.shape.length;
   const blockWidthFull = columns * cellSize + (columns > 1 ? (columns - 1) * GRID_GAP : 0);
   const blockHeightFull = rows * cellSize + (rows > 1 ? (rows - 1) * GRID_GAP : 0);
-  const invScale = Math.min(1, 120 / Math.max(blockWidthFull, blockHeightFull));
+  const invScale = 20 / cellSize;
 
 
 
@@ -97,10 +96,10 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
       const DRAG_Y_OFFSET = -80; // Render block 80px above finger
       const rawX = moveEvent.clientX - startPos.current.x;
       const rawY = moveEvent.clientY - startPos.current.y + DRAG_Y_OFFSET;
-      
+
       // FLUID DRAG: Always follow finger smoothly
       if (blockRef.current) {
-        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.15)`;
+        blockRef.current.style.transform = `translate3d(${rawX}px, ${rawY}px, 0) scale(1.0)`;
         dragOffsetRef.current = { x: rawX, y: rawY };
       }
       latestPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
@@ -124,7 +123,7 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
 
       const checkX = topLeftX + blockAnchorsRef.current.c * (cellSize + GRID_GAP) + cellSize / 2;
       const checkY = topLeftY + blockAnchorsRef.current.r * (cellSize + GRID_GAP) + cellSize / 2;
-      
+
       const cell = findNearestCell(checkX, checkY);
 
       if (cell) {
@@ -148,10 +147,10 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
       ref={blockRef}
       className="relative p-0 rounded-lg select-none"
       style={{
-        width: blockWidthFull,
-        height: blockHeightFull,
+        width: isDragging ? blockWidthFull : blockWidthFull * invScale,
+        height: isDragging ? blockHeightFull : blockHeightFull * invScale,
         touchAction: 'none',
-        transform: isDragging ? undefined : `translate3d(0px, 0px, 0) scale(${invScale})`,
+        transform: isDragging ? undefined : `translate3d(0px, 0px, 0)`,
         transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: isDragging ? 9999 : 10,
         pointerEvents: 'auto',
@@ -165,8 +164,10 @@ export default function DraggableBlock({ block, onPlace }: DraggableBlockProps) 
         className={`grid ${isDragging ? 'opacity-90' : 'opacity-100'} relative z-10`}
         style={{
           gridTemplateColumns: `repeat(${block.shape[0].length}, 1fr)`,
-          gap: `${GRID_GAP}px`,
+          gap: '0px',
           pointerEvents: 'none',
+          transform: isDragging ? undefined : `scale(${invScale})`,
+          transformOrigin: 'top left'
         }}
       >
         {block.shape.map((row, r) => (row.map((val, c) => (
