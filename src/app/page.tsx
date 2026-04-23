@@ -40,11 +40,11 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col items-center w-full gap-18 h-[100dvh] select-none overflow-hidden relative bg-[#9d9d9d]">
+    <main className="flex flex-col items-center w-full h-[100dvh] select-none overflow-hidden relative bg-[#9d9d9d] pt-safe pb-safe">
 
       {/* Combo Indicator - Moved to TOP center */}
       {showCombo && comboCount > 1 && (
-        <div className="absolute top-18 left-1/2 -translate-x-1/2 whitespace-nowrap mt-20 z-[1000] animate-bounce-in">
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 whitespace-nowrap z-[1000] animate-bounce-in">
           <div className="combo-text text-5xl font-black italic tracking-tighter">
             <span className="text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">COMBO </span>
             <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">x{comboCount}</span>
@@ -80,7 +80,7 @@ export default function Home() {
         </div>
 
         {/* Large Score in Center */}
-        <div className="flex justify-center -mt-2">
+        <div className="flex justify-center -mt-2 mb-4">
           <span className="text-[80px] font-bold text-white leading-none tracking-tight">
             {score}
           </span>
@@ -135,12 +135,14 @@ export default function Home() {
         )}
       </div>
 
-      {/* Controller / Inventory - Positioned relative instead of fixed to avoid overlap */}
-      <div className="max-w-lg m-0 z-30" style={{ marginBottom: "6rem" }}>
-        <BlockInventory
-          blocks={inventory}
-          onPlace={placeBlock}
-        />
+      {/* Controller / Inventory - Fixed to bottom for iOS visibility */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 pb-safe mb-4 flex justify-center">
+        <div className="w-full max-w-lg px-4">
+          <BlockInventory
+            blocks={inventory}
+            onPlace={placeBlock}
+          />
+        </div>
       </div>
 
       {/* Remove Instructions to keep it clean like the image */}
